@@ -1,0 +1,3 @@
+DROP TABLE money2;
+DROP TABLE users;
+DROP TABLE types;
