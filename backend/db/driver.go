@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -30,7 +31,9 @@ func PrepareDB(ctx context.Context) (*sql.DB, error) {
 		return nil, errors.Wrap(err, "failed to open schema.sql %w")
 	}
 
+	fmt.Println(string(f))
 	if _, err = db.ExecContext(ctx, string(f)); err != nil {
+		fmt.Println(err)
 		return nil, errors.Wrap(err, "failed to exec query: %w")
 	}
 

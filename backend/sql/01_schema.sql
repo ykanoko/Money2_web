@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users
 (
     id       integer primary key autoincrement,
     name     varchar(50),
-    password binary(60),
+    password binary(60)
 );
 
 CREATE TABLE IF NOT EXISTS types

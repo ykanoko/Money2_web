@@ -22,39 +22,6 @@ import (
 コメント
 */
 
-// type Response struct {
-// 	Message string `json:"message"`
-// }
-
-// func root(c echo.Context) error {
-// 	res := Response{Message: "Hello, world!"}
-// 	return c.JSON(http.StatusOK, res)
-// }
-
-// func main() {
-// 	e := echo.New()
-
-// 	// Middleware
-// 	e.Use(middleware.Logger())
-// 	e.Use(middleware.Recover())
-// 	e.Logger.SetLevel(log.INFO)
-
-// 	front_url := os.Getenv("FRONT_URL")
-// 	if front_url == "" {
-// 		front_url = "http://localhost:3000"
-// 	}
-// 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-// 		AllowOrigins: []string{front_url},
-// 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
-// 	}))
-
-// 	// Routes
-// 	e.GET("/", root)
-
-// 	// Start server
-// 	e.Logger.Fatal(e.Start(":9000"))
-// }
-
 const (
 	exitOK = iota
 	exitError
