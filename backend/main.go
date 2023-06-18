@@ -81,22 +81,23 @@ func run(ctx context.Context) int {
 	}
 
 	// Routes
-	// e.POST("/initialize", h.Initialize)
-	e.GET("/log", h.AccessLog)
+	e.POST("/initialize", h.Initialize)
+	// e.GET("/log", h.AccessLog)
 
-	// e.GET("/items", h.GetOnSaleItems)
 	// e.GET("/items/:itemID", h.GetItem)
 	// e.GET("/items/:itemID/image", h.GetImage)
 	// e.GET("/items/categories", h.GetCategories)
-	// e.POST("/register", h.Register)
+	e.POST("/register", h.Register)
 	// e.POST("/login", h.Login)
 
 	// Login required
 	l := e.Group("")
 	l.Use(echojwt.WithConfig(config))
 
+	// l.GET("/money", h.GetMoney)
 	// l.GET("/users/:userID/items", h.GetUserItems)
 	// l.POST("/items", h.AddItem)
+	// DO:ある程度記録が溜まったら、最初の方を削除？
 	// l.POST("/sell", h.Sell)
 	// l.POST("/purchase/:itemID", h.Purchase)
 	// l.GET("/balance", h.GetBalance)
