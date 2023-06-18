@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"math"
 	"net/http"
 	"os"
 	"time"
@@ -49,17 +50,17 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
-// type getMoney2Response struct {
-// 	ID         int32  `json:"id"`
-// 	Date       string `json:"date"`
-// 	Type       string `json:"type"`
-// 	User       string `json:"user"`
-// 	Amount     int64  `json:"amount"`
-// 	MoneyUser1 int64  `json:"money_user1"`
-// 	MoneyUser2 int64  `json:"money_user2"`
-// 	PayUser    string `json:"pay_user"`
-// 	PayAmount  int64  `json:"pay_amount"`
-// }
+type getMoneyRecordsResponse struct {
+	ID           int32   `json:"id"`
+	Date         string  `json:"date"`
+	Type         string  `json:"type"`
+	User         string  `json:"user"`
+	Amount       int64   `json:"amount"`
+	BalanceUser1 int64   `json:"money_user1"`
+	BalanceUser2 int64   `json:"money_user2"`
+	PayUser      string  `json:"pay_user"`
+	PayAmount    float64 `json:"pay_amount"`
+}
 
 type Handler struct {
 	DB        *sql.DB
@@ -163,49 +164,73 @@ func (h *Handler) Login(c echo.Context) error {
 	})
 }
 
-// func (h *Handler) GetMoney(c echo.Context) error {
-// ctx := c.Request().Context()
+func (h *Handler) GetMoneyRecords(c echo.Context) error {
+	ctx := c.Request().Context()
 
-// money2, err := h.MoneyRepo.GetMoney(ctx)
-// // TODO: not found handling
-// // http.StatusNotFound(404)
-// if err != nil {
-// 	if err == sql.ErrNoRows {
-// 		return echo.NewHTTPError(http.StatusNotFound, "Record not found.")
-// 	}
-// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
-// }
+	moneyRecords, err := h.MoneyRepo.GetMoneyRecords(ctx)
+	// TODO: not found handling
+	// http.StatusNotFound(404)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Record not found.")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-// var res []getMoney2Response
-// for _, money := range money2 {
-// 	if money.
-// 	types, err := h.MoneyRepo.GetTypes(ctx)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
-// 	users, err := h.UserRepo.GetUsers(ctx)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
+	var res []getMoneyRecordsResponse
+	types, err := h.MoneyRepo.GetTypes(ctx)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
-// 	for _, typ := range types {
-// 		if typ.ID == money.TypeID {
-// 			for _, user:= range users {
-// 				if user.ID == money.UserID {
-// 					userName := user.Name
-// 				}
-// 				if user.ID ==  {
-// 					userName := user.Name
-// 				}
-// 			}
-// 			res = append(res, getMoney2Response{ID: money.ID, Date: money.Date, Type: Typ.Name, User: User.Name, Amount: money.Amount, MoneyUser1: money.MoneyUser1, MoneyUser2: money.MoneyUser2, PayUser: user.Name, PayAmount: math.Abs(float64(money.CalculationUser1))})
+	users, err := h.UserRepo.GetUsers(ctx)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
-// 		}
-// 	}
-// }
+	var userName string
+	var balance1 int64
+	var balance2 int64
+	var payUserID int64
+	var payUser string
 
-// return c.JSON(http.StatusOK, res)
-// }
+	for _, moneyRecord := range moneyRecords {
+		if moneyRecord.CalculationUser1 > 0 {
+			payUserID = 1
+		} else if moneyRecord.CalculationUser1 < 0 {
+			payUserID = 2
+		} else {
+			payUserID = 0
+		}
+
+		for _, typ := range types {
+			if typ.ID == moneyRecord.TypeID {
+				for _, user := range users {
+					if user.ID == 1 {
+						balance1 = user.Balance
+
+					} else if user.ID == 2 {
+						balance2 = user.Balance
+					}
+
+					if user.ID == moneyRecord.UserID {
+						userName = user.Name
+					}
+
+					// CalculationUser1 == 0　の時
+					if payUserID == 0 {
+						payUser = ""
+					}
+					if user.ID == payUserID {
+						payUser = user.Name
+					}
+				}
+				res = append(res, getMoneyRecordsResponse{ID: moneyRecord.ID, Date: moneyRecord.CreatedAt, Type: typ.Name, User: userName, Amount: moneyRecord.Amount, BalanceUser1: balance1, BalanceUser2: balance2, PayUser: payUser, PayAmount: math.Abs(moneyRecord.CalculationUser1)})
+			}
+		}
+	}
+	return c.JSON(http.StatusOK, res)
+}
 
 func getEnv(key string, defaultValue string) string {
 	value := os.Getenv(key)
