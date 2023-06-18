@@ -88,7 +88,7 @@ func run(ctx context.Context) int {
 	// e.GET("/items/:itemID/image", h.GetImage)
 	// e.GET("/items/categories", h.GetCategories)
 	e.POST("/register", h.Register)
-	// e.POST("/login", h.Login)
+	e.POST("/login", h.Login)
 
 	// Login required
 	l := e.Group("")

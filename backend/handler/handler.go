@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
@@ -35,6 +36,17 @@ type registerRequest struct {
 type registerResponse struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+type loginRequest struct {
+	UserID   int64  `json:"user_id" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+type loginResponse struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Token string `json:"token"`
 }
 
 type getMoney2Response struct {
@@ -98,6 +110,53 @@ func (h *Handler) Register(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, registerResponse{ID: userID, Name: req.Name})
+}
+
+func (h *Handler) Login(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	req := new(loginRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "id and password are both required")
+	}
+
+	user, err := h.UserRepo.GetUser(ctx, req.UserID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			return echo.NewHTTPError(http.StatusUnauthorized, err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Set custom claims
+	claims := &JwtCustomClaims{
+		req.UserID,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 72)),
+		},
+	}
+	// Create token with claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	// Generate encoded token and send it as response.
+	encodedToken, err := token.SignedString([]byte(GetSecret()))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, loginResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Token: encodedToken,
+	})
 }
 
 // func (h *Handler) GetMoney(c echo.Context) error {
