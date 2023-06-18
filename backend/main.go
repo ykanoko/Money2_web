@@ -58,7 +58,7 @@ func run(ctx context.Context) int {
 	}))
 	e.Use(middleware.BodyLimit("5M"))
 
-	// jwt
+	// jwt DO:分からないで使うと脆弱性あり。勉強する。
 	config := echojwt.Config{
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
 			return new(handler.JwtCustomClaims)
@@ -82,7 +82,7 @@ func run(ctx context.Context) int {
 
 	// Routes
 	e.POST("/initialize", h.Initialize)
-	// e.GET("/log", h.AccessLog)
+	e.GET("/log", h.AccessLog)
 
 	// e.GET("/items/:itemID", h.GetItem)
 	// e.GET("/items/:itemID/image", h.GetImage)

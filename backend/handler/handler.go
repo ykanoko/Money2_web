@@ -49,17 +49,17 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
-type getMoney2Response struct {
-	ID         int32  `json:"id"`
-	Date       string `json:"date"`
-	Type       string `json:"type"`
-	User       string `json:"user"`
-	Amount     int64  `json:"amount"`
-	MoneyUser1 int64  `json:"money_user1"`
-	MoneyUser2 int64  `json:"money_user2"`
-	PayUser    string `json:"pay_user"`
-	PayAmount  int64  `json:"pay_amount"`
-}
+// type getMoney2Response struct {
+// 	ID         int32  `json:"id"`
+// 	Date       string `json:"date"`
+// 	Type       string `json:"type"`
+// 	User       string `json:"user"`
+// 	Amount     int64  `json:"amount"`
+// 	MoneyUser1 int64  `json:"money_user1"`
+// 	MoneyUser2 int64  `json:"money_user2"`
+// 	PayUser    string `json:"pay_user"`
+// 	PayAmount  int64  `json:"pay_amount"`
+// }
 
 type Handler struct {
 	DB        *sql.DB
@@ -86,6 +86,10 @@ func (h *Handler) Initialize(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, InitializeResponse{Message: "Success"})
+}
+
+func (h *Handler) AccessLog(c echo.Context) error {
+	return c.File(logFile)
 }
 
 func (h *Handler) Register(c echo.Context) error {
@@ -202,10 +206,6 @@ func (h *Handler) Login(c echo.Context) error {
 
 // return c.JSON(http.StatusOK, res)
 // }
-
-func (h *Handler) AccessLog(c echo.Context) error {
-	return c.File(logFile)
-}
 
 func getEnv(key string, defaultValue string) string {
 	value := os.Getenv(key)
