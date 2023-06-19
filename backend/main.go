@@ -95,8 +95,8 @@ func run(ctx context.Context) int {
 	l.Use(echojwt.WithConfig(config))
 
 	l.GET("/money_records", h.GetMoneyRecords)
+	l.POST("/money_record", h.AddMoneyRecord)
 	// l.GET("/users/:userID/items", h.GetUserItems)
-	// l.POST("/items", h.AddItem)
 	// DO:ある程度記録が溜まったら、最初の方を削除？
 	// l.POST("/sell", h.Sell)
 	// l.POST("/purchase/:itemID", h.Purchase)

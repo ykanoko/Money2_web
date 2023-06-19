@@ -11,7 +11,7 @@ type UserRepository interface {
 	AddUser(ctx context.Context, user domain.User) (int64, error)
 	GetUser(ctx context.Context, id int64) (domain.User, error)
 	GetUsers(ctx context.Context) ([]domain.User, error)
-	// UpdateBalance(ctx context.Context, id int64, balance int64) error
+	UpdateBalance(ctx context.Context, id int64, balance float64) error
 }
 
 type UserDBRepository struct {
@@ -40,6 +40,7 @@ func (r *UserDBRepository) GetUser(ctx context.Context, id int64) (domain.User, 
 	var user domain.User
 	return user, row.Scan(&user.ID, &user.Name, &user.Password, &user.Balance)
 }
+
 func (r *UserDBRepository) GetUsers(ctx context.Context) ([]domain.User, error) {
 	rows, err := r.QueryContext(ctx, "SELECT * FROM users")
 	if err != nil {
@@ -61,13 +62,20 @@ func (r *UserDBRepository) GetUsers(ctx context.Context) ([]domain.User, error) 
 	return users, nil
 }
 
+func (r *UserDBRepository) UpdateBalance(ctx context.Context, id int64, balance float64) error {
+	if _, err := r.ExecContext(ctx, "UPDATE users SET balance = ? WHERE id = ?", balance, id); err != nil {
+		return err
+	}
+	return nil
+}
+
 type MoneyRepository interface {
-	// AddMoney(ctx context.Context, money domain.Money) (domain.Money, error)
-	// GetMoney(ctx context.Context, id int32) (domain.Money, error)
+	AddMoneyRecord(ctx context.Context, money domain.Money) (domain.Money, error)
+	GetLatestMoneyRecord(ctx context.Context) (domain.Money, error)
 	// GetMoneyImage(ctx context.Context, id int32) ([]byte, error)
 	GetMoneyRecords(ctx context.Context) ([]domain.Money, error)
 	// GetMoney2ByUserID(ctx context.Context, userID int64) ([]domain.Money, error)
-	GetType(ctx context.Context, id int64) (domain.Type, error)
+	GetType(ctx context.Context, id int32) (domain.Type, error)
 	GetTypes(ctx context.Context) ([]domain.Type, error)
 	// UpdateMoneyStatus(ctx context.Context, id int32, status domain.MoneyStatus) error
 }
@@ -79,17 +87,23 @@ func NewMoneyRepository(db *sql.DB) MoneyRepository {
 	return &MoneyDBRepository{DB: db}
 }
 
-// func (r *MoneyDBRepository) AddMoney(ctx context.Context, money domain.Money) (domain.Money, error) {
-// 	if _, err := r.ExecContext(ctx, "INSERT INTO money2 (name, price, category_id, seller_id) VALUES (?, ?, ?, ?)", money.Name, money.Price, money.CategoryID, money.UserID); err != nil {
-// 		return domain.Money{}, err
-// 	}
-// 	// TODO: if other insert query is executed at the same time, it might return wrong id
-// 	// http.StatusConflict(409) 既に同じIDがあった場合
-// 	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE rowid = LAST_INSERT_ROWID()")
+func (r *MoneyDBRepository) AddMoneyRecord(ctx context.Context, money domain.Money) (domain.Money, error) {
+	if _, err := r.ExecContext(ctx, "INSERT INTO money2 (type_id, user_id, amount, calculation_user1) VALUES (?, ?, ?, ?)", money.TypeID, money.UserID, money.Amount, money.CalculationUser1); err != nil {
+		return domain.Money{}, err
+	}
+	// TODO: if other insert query is executed at the same time, it might return wrong id
+	// http.StatusConflict(409) 既に同じIDがあった場合
+	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE rowid = LAST_INSERT_ROWID()")
 
-// 	var res domain.Money
-// 	return res, row.Scan(&res.ID, &res.Name, &res.Price, &res.CategoryID, &res.UserID, &res.CreatedAt, &res.UpdatedAt)
-// }
+	var res domain.Money
+	return res, row.Scan(&res.ID, &res.TypeID, &res.UserID, &res.Amount, &res.CalculationUser1, &res.CreatedAt)
+}
+
+func (r *MoneyDBRepository) GetLatestMoneyRecord(ctx context.Context) (domain.Money, error) {
+	row := r.QueryRowContext(ctx, "SELECT * FROM money2 ORDER BY created_at DESC LIMIT 1")
+	var money domain.Money
+	return money, row.Scan(&money.ID, &money.TypeID, &money.UserID, &money.Amount, &money.CalculationUser1, &money.CreatedAt)
+}
 
 func (r *MoneyDBRepository) GetMoneyRecords(ctx context.Context) ([]domain.Money, error) {
 	rows, err := r.QueryContext(ctx, "SELECT * FROM money2 ORDER BY created_at DESC LIMIT 10")
@@ -133,11 +147,11 @@ func (r *MoneyDBRepository) GetMoneyRecords(ctx context.Context) ([]domain.Money
 // 	return money2, nil
 // }
 
-func (r *MoneyDBRepository) GetType(ctx context.Context, id int64) (domain.Type, error) {
+func (r *MoneyDBRepository) GetType(ctx context.Context, id int32) (domain.Type, error) {
 	row := r.QueryRowContext(ctx, "SELECT * FROM types WHERE id = ?", id)
 
-	var cat domain.Type
-	return cat, row.Scan(&cat.ID, &cat.Name)
+	var typ domain.Type
+	return typ, row.Scan(&typ.ID, &typ.Name)
 }
 
 func (r *MoneyDBRepository) GetTypes(ctx context.Context) ([]domain.Type, error) {

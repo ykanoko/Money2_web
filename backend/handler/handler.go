@@ -56,10 +56,20 @@ type getMoneyRecordsResponse struct {
 	Type         string  `json:"type"`
 	User         string  `json:"user"`
 	Amount       int64   `json:"amount"`
-	BalanceUser1 int64   `json:"balance_user1"`
-	BalanceUser2 int64   `json:"balance_user2"`
+	BalanceUser1 float64 `json:"balance_user1"`
+	BalanceUser2 float64 `json:"balance_user2"`
 	PayUser      string  `json:"pay_user"`
 	PayAmount    float64 `json:"pay_amount"`
+}
+
+type addMoneyRecordRequest struct {
+	TypeID int32 `form:"type_id" validate:"required"`
+	UserID int64 `form:"user_id" validate:"required"`
+	Amount int64 `form:"amount" validate:"required"`
+}
+
+type addMoneyRecordResponse struct {
+	ID int64 `json:"id"`
 }
 
 type Handler struct {
@@ -189,8 +199,8 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 	}
 
 	var userName string
-	var balance1 int64
-	var balance2 int64
+	var balance1 float64
+	var balance2 float64
 	var payUserID int64
 	var payUser string
 
@@ -230,6 +240,65 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 		}
 	}
 	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handler) AddMoneyRecord(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	req := new(addMoneyRecordRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	if req.Amount <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "add plus amount")
+	}
+	// DO:フロントエンド実装
+
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
+	}
+
+	_, err := h.MoneyRepo.GetType(ctx, req.TypeID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid categoryID")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	users, err := h.UserRepo.GetUsers(ctx)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	for _, user := range users {
+		if err := h.UserRepo.UpdateBalance(ctx, user.ID, user.Balance-float64(req.Amount)/2); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+	}
+
+	latestMoneyRecord, err := h.MoneyRepo.GetLatestMoneyRecord(ctx)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	calculationAmount := float64(req.Amount) / 2
+	if req.UserID == 2 {
+		calculationAmount = -calculationAmount
+	}
+
+	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
+		TypeID:           req.TypeID,
+		UserID:           req.UserID,
+		Amount:           req.Amount,
+		CalculationUser1: latestMoneyRecord.CalculationUser1 + calculationAmount,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, addMoneyRecordResponse{ID: int64(moneyRecord.ID)})
 }
 
 func getEnv(key string, defaultValue string) string {
