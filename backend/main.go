@@ -50,7 +50,7 @@ func run(ctx context.Context) int {
 
 	frontURL := os.Getenv("FRONT_URL")
 	if frontURL == "" {
-		frontURL = "http://localhost:3000"
+		frontURL = "http://localhost:5174"
 	}
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{frontURL},
