@@ -98,7 +98,6 @@ func run(ctx context.Context) int {
 	l.POST("/money_record", h.AddMoneyRecord)
 	// l.GET("/users/:userID/items", h.GetUserItems)
 	// DO:ある程度記録が溜まったら、最初の方を削除？
-	// l.POST("/sell", h.Sell)
 	// l.POST("/purchase/:itemID", h.Purchase)
 	// l.GET("/balance", h.GetBalance)
 	// l.POST("/balance", h.AddBalance)
