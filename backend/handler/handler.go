@@ -56,8 +56,8 @@ type getMoneyRecordsResponse struct {
 	Type         string  `json:"type"`
 	User         string  `json:"user"`
 	Amount       int64   `json:"amount"`
-	BalanceUser1 int64   `json:"money_user1"`
-	BalanceUser2 int64   `json:"money_user2"`
+	BalanceUser1 int64   `json:"balance_user1"`
+	BalanceUser2 int64   `json:"balance_user2"`
 	PayUser      string  `json:"pay_user"`
 	PayAmount    float64 `json:"pay_amount"`
 }
