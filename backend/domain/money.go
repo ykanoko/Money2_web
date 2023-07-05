@@ -5,11 +5,9 @@ type Money struct {
 	// DO:ある程度記録が溜まったら、最初の方を削除？
 	TypeID int32
 	// 収支を行うUserID
-	UserID int64
-	Amount int64
-	// User1を基準とした精算額
-	CalculationUser1 float64
-	CreatedAt        string
+	UserID    int64
+	Amount    int64
+	CreatedAt string
 	// UpdatedAt        string DO:フロントエンドから修正できるようにする？
 }
 

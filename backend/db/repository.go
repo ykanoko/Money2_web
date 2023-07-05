@@ -23,7 +23,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO users (name, password, balance) VALUES (?, ?, 0)", user.Name, user.Password); err != nil {
+	if _, err := r.ExecContext(ctx, "INSERT INTO users (name, password, balance, calculation) VALUES (?, ?, 0, 0)", user.Name, user.Password); err != nil {
 		return 0, err
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
@@ -38,7 +38,7 @@ func (r *UserDBRepository) GetUser(ctx context.Context, id int64) (domain.User, 
 	row := r.QueryRowContext(ctx, "SELECT * FROM users WHERE id = ?", id)
 
 	var user domain.User
-	return user, row.Scan(&user.ID, &user.Name, &user.Password, &user.Balance)
+	return user, row.Scan(&user.ID, &user.Name, &user.Password, &user.Balance, &user.Calculation)
 }
 
 func (r *UserDBRepository) GetUsers(ctx context.Context) ([]domain.User, error) {
@@ -51,7 +51,7 @@ func (r *UserDBRepository) GetUsers(ctx context.Context) ([]domain.User, error) 
 	var users []domain.User
 	for rows.Next() {
 		var user domain.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Password, &user.Balance); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Password, &user.Balance, &user.Calculation); err != nil {
 			return nil, err
 		}
 		users = append(users, user)
@@ -88,7 +88,7 @@ func NewMoneyRepository(db *sql.DB) MoneyRepository {
 }
 
 func (r *MoneyDBRepository) AddMoneyRecord(ctx context.Context, money domain.Money) (domain.Money, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO money2 (type_id, user_id, amount, calculation_user1) VALUES (?, ?, ?, ?)", money.TypeID, money.UserID, money.Amount, money.CalculationUser1); err != nil {
+	if _, err := r.ExecContext(ctx, "INSERT INTO money2 (type_id, user_id, amount) VALUES (?, ?, ?)", money.TypeID, money.UserID, money.Amount); err != nil {
 		return domain.Money{}, err
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
@@ -96,13 +96,13 @@ func (r *MoneyDBRepository) AddMoneyRecord(ctx context.Context, money domain.Mon
 	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE rowid = LAST_INSERT_ROWID()")
 
 	var res domain.Money
-	return res, row.Scan(&res.ID, &res.TypeID, &res.UserID, &res.Amount, &res.CalculationUser1, &res.CreatedAt)
+	return res, row.Scan(&res.ID, &res.TypeID, &res.UserID, &res.Amount, &res.CreatedAt)
 }
 
 func (r *MoneyDBRepository) GetLatestMoneyRecord(ctx context.Context) (domain.Money, error) {
 	row := r.QueryRowContext(ctx, "SELECT * FROM money2 ORDER BY created_at DESC LIMIT 1")
 	var money domain.Money
-	return money, row.Scan(&money.ID, &money.TypeID, &money.UserID, &money.Amount, &money.CalculationUser1, &money.CreatedAt)
+	return money, row.Scan(&money.ID, &money.TypeID, &money.UserID, &money.Amount, &money.CreatedAt)
 }
 
 func (r *MoneyDBRepository) GetMoneyRecords(ctx context.Context) ([]domain.Money, error) {
@@ -115,7 +115,7 @@ func (r *MoneyDBRepository) GetMoneyRecords(ctx context.Context) ([]domain.Money
 	var money2 []domain.Money
 	for rows.Next() {
 		var money domain.Money
-		if err := rows.Scan(&money.ID, &money.TypeID, &money.UserID, &money.Amount, &money.CalculationUser1, &money.CreatedAt); err != nil {
+		if err := rows.Scan(&money.ID, &money.TypeID, &money.UserID, &money.Amount, &money.CreatedAt); err != nil {
 			return nil, err
 		}
 		money2 = append(money2, money)

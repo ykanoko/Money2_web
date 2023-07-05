@@ -49,17 +49,19 @@ type loginResponse struct {
 	Name  string `json:"name"`
 	Token string `json:"token"`
 }
-
+type moneyRecordResponse struct {
+	ID     int32  `json:"id"`
+	Date   string `json:"date"`
+	Type   string `json:"type"`
+	User   string `json:"user"`
+	Amount int64  `json:"amount"`
+}
 type getMoneyRecordsResponse struct {
-	ID           int32   `json:"id"`
-	Date         string  `json:"date"`
-	Type         string  `json:"type"`
-	User         string  `json:"user"`
-	Amount       int64   `json:"amount"`
-	BalanceUser1 float64 `json:"balance_user1"`
-	BalanceUser2 float64 `json:"balance_user2"`
-	PayUser      string  `json:"pay_user"`
-	PayAmount    float64 `json:"pay_amount"`
+	Records      []moneyRecordResponse `json:"records"`
+	BalanceUser1 float64               `json:"balance_user1"`
+	BalanceUser2 float64               `json:"balance_user2"`
+	PayUser      string                `json:"pay_user"`
+	PayAmount    float64               `json:"pay_amount"`
 }
 
 type addMoneyRecordRequest struct {
@@ -176,7 +178,6 @@ func (h *Handler) Login(c echo.Context) error {
 
 func (h *Handler) GetMoneyRecords(c echo.Context) error {
 	ctx := c.Request().Context()
-
 	moneyRecords, err := h.MoneyRepo.GetMoneyRecords(ctx)
 	// TODO: not found handling
 	// http.StatusNotFound(404)
@@ -187,8 +188,14 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	var res []getMoneyRecordsResponse
+	var res getMoneyRecordsResponse
+	var resMoneyRecords []moneyRecordResponse
 	types, err := h.MoneyRepo.GetTypes(ctx)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	user, err := h.UserRepo.GetUser(ctx, 1)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -198,50 +205,56 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
+	var typeName string
 	var userName string
 	var balance1 float64
 	var balance2 float64
 	var payUserID int64
 	var payUser string
 
-	for _, moneyRecord := range moneyRecords {
-		if moneyRecord.CalculationUser1 > 0 {
-			payUserID = 1
-		} else if moneyRecord.CalculationUser1 < 0 {
-			payUserID = 2
-		} else {
-			payUserID = 0
-		}
+	if user.Calculation < 0 {
+		payUserID = 1
+	} else if user.Calculation > 0 {
+		payUserID = 2
+	} else {
+		payUserID = 0
+	}
 
+	for _, moneyRecord := range moneyRecords {
 		for _, typ := range types {
 			if typ.ID == moneyRecord.TypeID {
-				for _, user := range users {
-					if user.ID == 1 {
-						balance1 = user.Balance
-
-					} else if user.ID == 2 {
-						balance2 = user.Balance
-					}
-
-					if user.ID == moneyRecord.UserID {
-						userName = user.Name
-					}
-
-					// CalculationUser1 == 0　の時
-					if payUserID == 0 {
-						payUser = ""
-					}
-					if user.ID == payUserID {
-						payUser = user.Name
-					}
-				}
-				res = append(res, getMoneyRecordsResponse{ID: moneyRecord.ID, Date: moneyRecord.CreatedAt, Type: typ.Name, User: userName, Amount: moneyRecord.Amount, BalanceUser1: balance1, BalanceUser2: balance2, PayUser: payUser, PayAmount: math.Abs(moneyRecord.CalculationUser1)})
+				typeName = typ.Name
 			}
 		}
+
+		for _, user := range users {
+			if user.ID == 1 {
+				balance1 = user.Balance
+
+			} else if user.ID == 2 {
+				balance2 = user.Balance
+			}
+
+			if user.ID == moneyRecord.UserID {
+				userName = user.Name
+			}
+
+			// CalculationUser1 == 0　の時
+			if payUserID == 0 {
+				payUser = ""
+			}
+			if user.ID == payUserID {
+				payUser = user.Name
+			}
+		}
+		resMoneyRecords = append(resMoneyRecords, moneyRecordResponse{ID: moneyRecord.ID, Date: moneyRecord.CreatedAt, Type: typeName, User: userName, Amount: moneyRecord.Amount})
 	}
+
+	res = getMoneyRecordsResponse{Records: resMoneyRecords, BalanceUser1: balance1, BalanceUser2: balance2, PayUser: payUser, PayAmount: math.Abs(user.Calculation)}
 	return c.JSON(http.StatusOK, res)
 }
 
+// DO:てーぶるの変更を直す（精算column）
 func (h *Handler) AddMoneyRecord(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -273,7 +286,7 @@ func (h *Handler) AddMoneyRecord(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	latestMoneyRecord, err := h.MoneyRepo.GetLatestMoneyRecord(ctx)
+	// latestMoneyRecord, err := h.MoneyRepo.GetLatestMoneyRecord(ctx)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
@@ -299,10 +312,10 @@ func (h *Handler) AddMoneyRecord(c echo.Context) error {
 
 	//money2 tableに登録
 	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
-		TypeID:           req.TypeID,
-		UserID:           req.UserID,
-		Amount:           req.Amount,
-		CalculationUser1: latestMoneyRecord.CalculationUser1 + calculationAmount,
+		TypeID: req.TypeID,
+		UserID: req.UserID,
+		Amount: req.Amount,
+		// CalculationUser1: latestMoneyRecord.CalculationUser1 + calculationAmount,
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)

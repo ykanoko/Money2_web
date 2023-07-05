@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS money2
     type_id             integer,
     user_id             integer,
     amount              integer,
-    calculation_user1   integer,
     created_at  text NOT NULL DEFAULT (DATETIME('now', 'localtime'))
     -- updated_at  text NOT NULL DEFAULT (DATETIME('now', 'localtime'))
 
@@ -15,7 +14,9 @@ CREATE TABLE IF NOT EXISTS users
     id       integer primary key autoincrement,
     name     varchar(50),
     password binary(60),
-    balance integer
+    balance integer,
+    calculation  integer
+
 );
 
 CREATE TABLE IF NOT EXISTS types
