@@ -249,10 +249,6 @@ func (h *Handler) AddMoneyRecord(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
-	if req.Amount <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "add plus amount")
-	}
-	// DO:フロントエンド実装
 
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
@@ -267,27 +263,41 @@ func (h *Handler) AddMoneyRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	users, err := h.UserRepo.GetUsers(ctx)
+	user, err := h.UserRepo.GetUser(ctx, req.UserID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	for _, user := range users {
-		if err := h.UserRepo.UpdateBalance(ctx, user.ID, user.Balance-float64(req.Amount)/2); err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
+	users, err := h.UserRepo.GetUsers(ctx)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	latestMoneyRecord, err := h.MoneyRepo.GetLatestMoneyRecord(ctx)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
-
 	calculationAmount := float64(req.Amount) / 2
-	if req.UserID == 2 {
-		calculationAmount = -calculationAmount
+
+	// 残金の変更
+	if req.TypeID == 1 {
+		if err := h.UserRepo.UpdateBalance(ctx, req.UserID, user.Balance+float64(req.Amount)); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+
+	} else if req.TypeID == 2 {
+		for _, use := range users {
+			if err := h.UserRepo.UpdateBalance(ctx, use.ID, use.Balance-float64(req.Amount)/2); err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, err)
+			}
+		}
+		// 精算の金額を変更
+		if req.UserID == 2 {
+			calculationAmount = -calculationAmount
+		}
 	}
 
+	//money2 tableに登録
 	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
 		TypeID:           req.TypeID,
 		UserID:           req.UserID,

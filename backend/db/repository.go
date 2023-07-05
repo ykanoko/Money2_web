@@ -106,7 +106,7 @@ func (r *MoneyDBRepository) GetLatestMoneyRecord(ctx context.Context) (domain.Mo
 }
 
 func (r *MoneyDBRepository) GetMoneyRecords(ctx context.Context) ([]domain.Money, error) {
-	rows, err := r.QueryContext(ctx, "SELECT * FROM money2 ORDER BY created_at DESC LIMIT 10")
+	rows, err := r.QueryContext(ctx, "SELECT * FROM money2 ORDER BY created_at DESC LIMIT 30")
 	if err != nil {
 		return nil, err
 	}
