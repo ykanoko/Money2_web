@@ -2,39 +2,38 @@ import { Table } from "@mantine/core"
 import { getMoneyRecords } from "../api/api"
 import {useEffect, useState} from "react"
 
+type MoneyRecordResponse = {
+  balance_user1: number   
+	balance_user2 :number   
+	pay_user     : string  
+	pay_amount   : number 
+records: MoneyRecord[]
+}
+
 type MoneyRecord = {
     id: number
     date: string
     type: string
 	user         :string 
 	amount       :number   
-	balance_user1: number   
-	balance_user2 :number   
-	pay_user     : string  
-	pay_amount   : number 
-
 }
 const MoneyRecordsPage = () => {
     // usestaと打つ
-    const [moneyRecords, setMoneyRecords] = useState<MoneyRecord[]>([])
+    const [moneyRecordsResponse, setMoneyRecordsResponse] = useState<MoneyRecordResponse>()
 useEffect( () => {
     getMoneyRecords().then(res =>{
-        setMoneyRecords(res)
+        setMoneyRecordsResponse(res)
         console.log(res)
     })
 }, [])
 
-const rows = moneyRecords.map((moneyRecord) => (
+const rows = moneyRecordsResponse?.records.map((moneyRecord) => (
     <tr key={moneyRecord.id}>
       <td>{moneyRecord.id}</td>
       <td>{moneyRecord.date}</td>
       <td>{moneyRecord.type}</td>
       <td>{moneyRecord.user}</td>
       <td>{moneyRecord.amount}</td>
-      <td>{moneyRecord.balance_user1}</td>
-      <td>{moneyRecord.balance_user2}</td>
-      <td>{moneyRecord.pay_user}</td>
-      <td>{moneyRecord.pay_amount}</td>
     </tr>
   ));
 
@@ -47,10 +46,6 @@ return (
           <th>種類</th>
           <th>名前</th>
           <th>金額</th>
-          <th>残金1</th>
-          <th>残金2</th>
-          <th>払うべき人</th>
-          <th>払うべき金額</th>
           {/* <th>Date</th>
           <th>Type</th>
           <th>User</th>

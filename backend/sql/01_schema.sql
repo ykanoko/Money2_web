@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS users
     id       integer primary key autoincrement,
     name     varchar(50),
     password binary(60),
-    balance integer,
-    calculation  integer
+    balance decimal,
+    calculation  decimal
 
 );
 
