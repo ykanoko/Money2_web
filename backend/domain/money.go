@@ -1,8 +1,9 @@
 package domain
 
 type Money struct {
-	ID int32
+	ID int64
 	// DO:ある程度記録が溜まったら、最初の方を削除？
+	PairID int64
 	TypeID int32
 	// 収支を行うUserID
 	UserID    int64

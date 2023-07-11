@@ -1,3 +1,4 @@
 DROP TABLE money2;
-DROP TABLE users;
 DROP TABLE types;
+DROP TABLE pairs;
+DROP TABLE users;
