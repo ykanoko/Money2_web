@@ -287,7 +287,7 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	return c.JSON(http.StatusOK, addPairExpenseRecordResponse{Money2ID: moneyRecord.ID})
+	return c.JSON(http.StatusOK, addIncomeRecordResponse{Money2ID: moneyRecord.ID})
 }
 
 func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
@@ -444,6 +444,7 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+	// DO:moneyRecordsがnullになるときの対応
 
 	types, err := h.MoneyRepo.GetTypes(ctx)
 	if err != nil {
