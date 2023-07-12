@@ -2,6 +2,8 @@ package handler
 
 import (
 	"database/sql"
+	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"time"
@@ -61,17 +63,18 @@ type getPairStatusReponse struct {
 	PayAmount    float64 `json:"pay_amount"`
 }
 
-type moneyRecordData struct {
-	Money2ID int32  `json:"money2_id"`
+// type moneyRecordData struct {
+type getMoneyRecordsResponse struct {
+	Money2ID int64  `json:"money2_id"`
 	Date     string `json:"date"`
 	Type     string `json:"type"`
 	User     string `json:"user"`
 	Amount   int64  `json:"amount"`
 }
 
-type getMoneyRecordsResponse struct {
-	Records []moneyRecordData `json:"records"`
-}
+// type getMoneyRecordsResponse struct {
+// 	Records []moneyRecordData `json:"records"`
+// }
 
 type addIncomeRecordRequest struct {
 	UserID int64 `form:"user_id" validate:"required"`
@@ -106,6 +109,13 @@ type Handler struct {
 	MoneyRepo db.MoneyRepository
 }
 
+func getEnv(key string, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
 func GetSecret() string {
 	if secret := os.Getenv("SECRET"); secret != "" {
 		return secret
@@ -212,162 +222,17 @@ func (h *Handler) Login(c echo.Context) error {
 	})
 }
 
-// func (h *Handler) GetMoneyRecords(c echo.Context) error {
-// 	ctx := c.Request().Context()
-// 	moneyRecords, err := h.MoneyRepo.GetMoneyRecords(ctx)
-// 	// TODO: not found handling
-// 	// http.StatusNotFound(404)
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			return echo.NewHTTPError(http.StatusNotFound, "Record not found.")
-// 		}
-// 		return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 	}
-
-// 	var res getMoneyRecordsResponse
-// 	var resMoneyRecords []moneyRecordResponse
-// 	types, err := h.MoneyRepo.GetTypes(ctx)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
-
-// 	user, err := h.UserRepo.GetUser(ctx, 1)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
-
-// 	users, err := h.UserRepo.GetUsers(ctx)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
-
-// 	var typeName string
-// 	var userName string
-// 	var balance1 float64
-// 	var balance2 float64
-// 	var payUserID int64
-// 	var payUser string
-
-// 	if user.Calculation < 0 {
-// 		payUserID = 1
-// 	} else if user.Calculation > 0 {
-// 		payUserID = 2
-// 	} else {
-// 		payUserID = 0
-// 	}
-
-// 	for _, moneyRecord := range moneyRecords {
-// 		for _, typ := range types {
-// 			if typ.ID == moneyRecord.TypeID {
-// 				typeName = typ.Name
-// 			}
-// 		}
-
-// 		for _, user := range users {
-// 			if user.ID == 1 {
-// 				balance1 = user.Balance
-
-// 			} else if user.ID == 2 {
-// 				balance2 = user.Balance
-// 			}
-
-// 			if user.ID == moneyRecord.UserID {
-// 				userName = user.Name
-// 			}
-
-// 			// CalculationUser1 == 0　の時
-// 			if payUserID == 0 {
-// 				payUser = ""
-// 			}
-// 			if user.ID == payUserID {
-// 				payUser = user.Name
-// 			}
-// 		}
-// 		resMoneyRecords = append(resMoneyRecords, moneyRecordResponse{ID: moneyRecord.ID, Date: moneyRecord.CreatedAt, Type: typeName, User: userName, Amount: moneyRecord.Amount})
-// 	}
-
-// 	res = getMoneyRecordsResponse{Records: resMoneyRecords, BalanceUser1: balance1, BalanceUser2: balance2, PayUser: payUser, PayAmount: math.Abs(user.Calculation)}
-// 	return c.JSON(http.StatusOK, res)
-// }
-
-// // DO:creat!!!!
-// func (h *Handler) GetPairStatus(c echo.Context) error {
-// 	ctx := c.Request().Context()
-// 	moneyRecords, err := h.MoneyRepo.GetMoneyRecords(ctx)
-// 	// TODO: not found handling
-// 	// http.StatusNotFound(404)
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			return echo.NewHTTPError(http.StatusNotFound, "Record not found.")
-// 		}
-// 		return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 	}
-
-// 	var res getMoneyRecordsResponse
-// 	var resMoneyRecords []moneyRecordResponse
-// 	types, err := h.MoneyRepo.GetTypes(ctx)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
-
-// 	user, err := h.UserRepo.GetUser(ctx, 1)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
-
-// 	users, err := h.UserRepo.GetUsers(ctx)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
-
-// 	var typeName string
-// 	var userName string
-// 	var balance1 float64
-// 	var balance2 float64
-// 	var payUserID int64
-// 	var payUser string
-
-// 	if user.Calculation < 0 {
-// 		payUserID = 1
-// 	} else if user.Calculation > 0 {
-// 		payUserID = 2
-// 	} else {
-// 		payUserID = 0
-// 	}
-
-// 	for _, moneyRecord := range moneyRecords {
-// 		for _, typ := range types {
-// 			if typ.ID == moneyRecord.TypeID {
-// 				typeName = typ.Name
-// 			}
-// 		}
-
-// 		for _, user := range users {
-// 			if user.ID == 1 {
-// 				balance1 = user.Balance
-
-// 			} else if user.ID == 2 {
-// 				balance2 = user.Balance
-// 			}
-
-// 			if user.ID == moneyRecord.UserID {
-// 				userName = user.Name
-// 			}
-
-// 			// CalculationUser1 == 0　の時
-// 			if payUserID == 0 {
-// 				payUser = ""
-// 			}
-// 			if user.ID == payUserID {
-// 				payUser = user.Name
-// 			}
-// 		}
-// 		resMoneyRecords = append(resMoneyRecords, moneyRecordResponse{ID: moneyRecord.ID, Date: moneyRecord.CreatedAt, Type: typeName, User: userName, Amount: moneyRecord.Amount})
-// 	}
-
-// 	res = getMoneyRecordsResponse{Records: resMoneyRecords, BalanceUser1: balance1, BalanceUser2: balance2, PayUser: payUser, PayAmount: math.Abs(user.Calculation)}
-// 	return c.JSON(http.StatusOK, res)
-// }
+func getPairID(c echo.Context) (int64, error) {
+	user := c.Get("user").(*jwt.Token)
+	if user == nil {
+		return -1, fmt.Errorf("invalid token")
+	}
+	claims := user.Claims.(*JwtCustomClaims)
+	if claims == nil {
+		return -1, fmt.Errorf("invalid token")
+	}
+	return claims.PairID, nil
+}
 
 // // DO:Creat!!!!!!!
 // func (h *Handler) AddIncomeRecord(c echo.Context) error {
@@ -449,12 +314,112 @@ func (h *Handler) Login(c echo.Context) error {
 // 	return c.JSON(http.StatusOK, addMoneyRecordResponse{ID: int64(moneyRecord.ID)})
 // }
 
-func getEnv(key string, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
+func (h *Handler) GetPairStatus(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	pairID, err := getPairID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
-	return value
+
+	pair, err := h.UserRepo.GetPair(ctx, pairID)
+	// TODO: not found handling
+	// http.StatusNotFound(404)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Pair not found.")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	user1, err := h.UserRepo.GetUser(ctx, pair.User1ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	user2, err := h.UserRepo.GetUser(ctx, pair.User2ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	var payUser string
+	if pair.CalculationUser1 < 0 {
+		payUser = user1.Name
+	} else if pair.CalculationUser1 > 0 {
+		payUser = user2.Name
+	} else {
+		payUser = ""
+	}
+
+	return c.JSON(http.StatusOK, getPairStatusReponse{
+		BalanceUser1: user1.Balance,
+		BalanceUser2: user2.Balance,
+		PayUser:      payUser,
+		PayAmount:    math.Abs(pair.CalculationUser1),
+	})
+}
+
+func (h *Handler) GetMoneyRecords(c echo.Context) error {
+	ctx := c.Request().Context()
+	pairID, err := getPairID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	pair, err := h.UserRepo.GetPair(ctx, pairID)
+	// TODO: not found handling
+	// http.StatusNotFound(404)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Pair not found.")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	user1, err := h.UserRepo.GetUser(ctx, pair.User1ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	user2, err := h.UserRepo.GetUser(ctx, pair.User2ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	moneyRecords, err := h.MoneyRepo.GetMoneyRecordsByPairID(ctx, pairID)
+	// TODO: not found handling
+	// http.StatusNotFound(404)
+	// DO:ペアにおけるレコードが無い場合、Rsponseはnullになっている
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Record not found.")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	types, err := h.MoneyRepo.GetTypes(ctx)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	var typeName string
+	var userName string
+	var res []getMoneyRecordsResponse
+	for _, moneyRecord := range moneyRecords {
+		for _, typ := range types {
+			if typ.ID == moneyRecord.TypeID {
+				typeName = typ.Name
+			}
+		}
+
+		if user1.ID == moneyRecord.UserID {
+			userName = user1.Name
+		} else if user2.ID == moneyRecord.UserID {
+			userName = user2.Name
+		}
+		res = append(res, getMoneyRecordsResponse{Money2ID: moneyRecord.ID, Date: moneyRecord.CreatedAt, Type: typeName, User: userName, Amount: moneyRecord.Amount})
+	}
+
+	// res := getMoneyRecordsResponse{Records: resMoneyRecords}
+	return c.JSON(http.StatusOK, res)
 }
 
 // // DO:Creat!!!!!!!
