@@ -86,25 +86,15 @@ func run(ctx context.Context) int {
 	e.POST("/login", h.Login)
 	e.GET("/log", h.AccessLog)
 
-	// e.GET("/items/:itemID", h.GetItem)
-	// e.GET("/items/:itemID/image", h.GetImage)
-	// e.GET("/items/categories", h.GetCategories)
-
 	// Login required
 	l := e.Group("")
 	l.Use(echojwt.WithConfig(config))
 
-	// l.POST("/record_income", h.AddIncomeRecord)
-	// l.POST("/record_pair_expense", h.AddPairExpenseRecord)
+	l.POST("/record_income", h.AddIncomeRecord)
+	l.POST("/record_pair_expense", h.AddPairExpenseRecord)
 	// l.POST("/record_indivisual_expense", h.AddIndivisualExpenseRecord)
 	l.GET("/pair_status", h.GetPairStatus)
 	l.GET("/money_records", h.GetMoneyRecords)
-
-	// l.GET("/users/:userID/items", h.GetUserItems)
-	// DO:ある程度記録が溜まったら、最初の方を削除？
-	// l.POST("/purchase/:itemID", h.Purchase)
-	// l.GET("/balance", h.GetBalance)
-	// l.POST("/balance", h.AddBalance)
 
 	// Start server
 	go func() {

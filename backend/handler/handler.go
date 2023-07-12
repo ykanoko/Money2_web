@@ -81,7 +81,7 @@ type addIncomeRecordRequest struct {
 	Amount int64 `form:"amount" validate:"required"`
 }
 
-type addIncomeRecordRecordResponse struct {
+type addIncomeRecordResponse struct {
 	Money2ID int64 `json:"money2_id"`
 }
 
@@ -234,85 +234,133 @@ func getPairID(c echo.Context) (int64, error) {
 	return claims.PairID, nil
 }
 
-// // DO:Creat!!!!!!!
-// func (h *Handler) AddIncomeRecord(c echo.Context) error {
-// 	ctx := c.Request().Context()
+func (h *Handler) AddIncomeRecord(c echo.Context) error {
+	ctx := c.Request().Context()
 
-// 	req := new(addMoneyRecordRequest)
-// 	if err := c.Bind(req); err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest, err)
-// 	}
-// }
+	req := new(addIncomeRecordRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
 
-// // DO:てーぶるの変更を直す（精算column）
-// func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
-// 	ctx := c.Request().Context()
+	// DO:何をvalidationしているのか？
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
+	}
 
-// 	req := new(addMoneyRecordRequest)
-// 	if err := c.Bind(req); err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest, err)
-// 	}
+	pairID, err := getPairID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
 
-// 	validate := validator.New()
-// 	if err := validate.Struct(req); err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
-// 	}
+	pair, err := h.UserRepo.GetPair(ctx, pairID)
+	// TODO: not found handling
+	// http.StatusNotFound(404)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Pair not found.")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-// 	_, err := h.MoneyRepo.GetType(ctx, req.TypeID)
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			return echo.NewHTTPError(http.StatusBadRequest, "invalid categoryID")
-// 		}
-// 		return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 	}
+	if req.UserID != pair.User1ID && req.UserID != pair.User2ID {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "You don't belong to this pair.")
+	}
 
-// 	user, err := h.UserRepo.GetUser(ctx, req.UserID)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
+	// 残金の変更
+	user, err := h.UserRepo.GetUser(ctx, req.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
-// 	users, err := h.UserRepo.GetUsers(ctx)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, err)
-// 	}
+	if err := h.UserRepo.UpdateBalance(ctx, req.UserID, user.Balance+float64(req.Amount)); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-// 	// latestMoneyRecord, err := h.MoneyRepo.GetLatestMoneyRecord(ctx)
-// 	if err != nil {
-// 		return echo.NewHTTPError(http.StatusUnauthorized, err)
-// 	}
-// 	calculationAmount := float64(req.Amount) / 2
+	//money2 tableに登録
+	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
+		PairID: pairID,
+		TypeID: 1,
+		UserID: req.UserID,
+		Amount: req.Amount,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, addPairExpenseRecordResponse{Money2ID: moneyRecord.ID})
+}
 
-// 	// 残金の変更
-// 	if req.TypeID == 1 {
-// 		if err := h.UserRepo.UpdateBalance(ctx, req.UserID, user.Balance+float64(req.Amount)); err != nil {
-// 			return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 		}
+func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
+	ctx := c.Request().Context()
 
-// 	} else if req.TypeID == 2 {
-// 		for _, use := range users {
-// 			if err := h.UserRepo.UpdateBalance(ctx, use.ID, use.Balance-float64(req.Amount)/2); err != nil {
-// 				return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 			}
-// 		}
-// 		// 精算の金額を変更
-// 		if req.UserID == 2 {
-// 			calculationAmount = -calculationAmount
-// 		}
-// 	}
+	req := new(addPairExpenseRecordRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
 
-// 	//money2 tableに登録
-// 	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
-// 		TypeID: req.TypeID,
-// 		UserID: req.UserID,
-// 		Amount: req.Amount,
-// 		// CalculationUser1: latestMoneyRecord.CalculationUser1 + calculationAmount,
-// 	})
-// 	if err != nil {
-// 		return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 	}
+	// DO:何をvalidationしているのか？
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
+	}
 
-// 	return c.JSON(http.StatusOK, addMoneyRecordResponse{ID: int64(moneyRecord.ID)})
-// }
+	// DO:関数に切り出したい
+	pairID, err := getPairID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	pair, err := h.UserRepo.GetPair(ctx, pairID)
+	// TODO: not found handling
+	// http.StatusNotFound(404)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Pair not found.")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if req.UserID != pair.User1ID && req.UserID != pair.User2ID {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "You don't belong to this pair.")
+	}
+
+	user1, err := h.UserRepo.GetUser(ctx, pair.User1ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	user2, err := h.UserRepo.GetUser(ctx, pair.User2ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	// 残金の変更
+	if err := h.UserRepo.UpdateBalance(ctx, user1.ID, user1.Balance-float64(req.Amount)/2); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	if err := h.UserRepo.UpdateBalance(ctx, user2.ID, user2.Balance-float64(req.Amount)/2); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	// 精算の金額を変更
+	calculationAmount := float64(req.Amount) / 2
+	if req.UserID == user2.ID {
+		calculationAmount = -calculationAmount
+	}
+	if err := h.UserRepo.UpdateCalculationUser1(ctx, pairID, pair.CalculationUser1+calculationAmount); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	//money2 tableに登録
+	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
+		PairID: pairID,
+		TypeID: 2,
+		UserID: req.UserID,
+		Amount: req.Amount,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, addPairExpenseRecordResponse{Money2ID: moneyRecord.ID})
+}
 
 func (h *Handler) GetPairStatus(c echo.Context) error {
 	ctx := c.Request().Context()
@@ -360,6 +408,8 @@ func (h *Handler) GetPairStatus(c echo.Context) error {
 
 func (h *Handler) GetMoneyRecords(c echo.Context) error {
 	ctx := c.Request().Context()
+
+	// DO:388行まで、外に関数切り出す？ただ、pairIDとかも使うから、それをひきつがないと
 	pairID, err := getPairID(c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)

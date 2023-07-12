@@ -14,6 +14,7 @@ type UserRepository interface {
 	GetPair(ctx context.Context, id int64) (domain.Pair, error)
 	GetUsers(ctx context.Context) ([]domain.User, error)
 	UpdateBalance(ctx context.Context, id int64, balance float64) error
+	UpdateCalculationUser1(ctx context.Context, id int64, calculation_user1 float64) error
 }
 
 type UserDBRepository struct {
@@ -89,6 +90,12 @@ func (r *UserDBRepository) UpdateBalance(ctx context.Context, id int64, balance 
 	}
 	return nil
 }
+func (r *UserDBRepository) UpdateCalculationUser1(ctx context.Context, id int64, calculation_user1 float64) error {
+	if _, err := r.ExecContext(ctx, "UPDATE pairs SET calculation_user1 = ? WHERE id = ?", calculation_user1, id); err != nil {
+		return err
+	}
+	return nil
+}
 
 type MoneyRepository interface {
 	AddMoneyRecord(ctx context.Context, money domain.Money) (domain.Money, error)
@@ -114,7 +121,7 @@ func (r *MoneyDBRepository) AddMoneyRecord(ctx context.Context, money domain.Mon
 	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE rowid = LAST_INSERT_ROWID()")
 
 	var res domain.Money
-	return res, row.Scan(&res.ID, &res.TypeID, &res.UserID, &res.Amount, &res.CreatedAt)
+	return res, row.Scan(&res.ID, &res.PairID, &res.TypeID, &res.UserID, &res.Amount, &res.CreatedAt)
 }
 
 func (r *MoneyDBRepository) GetLatestMoneyRecordByPairID(ctx context.Context, pair_id int64) (domain.Money, error) {
