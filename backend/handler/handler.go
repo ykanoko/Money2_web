@@ -143,6 +143,7 @@ func (h *Handler) AccessLog(c echo.Context) error {
 
 func (h *Handler) Register(c echo.Context) error {
 	req := new(registerRequest)
+	fmt.Println(req)
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -242,7 +243,6 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	// DO:何をvalidationしているのか？
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
@@ -298,13 +298,12 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	// DO:何をvalidationしているのか？
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
 	}
 
-	// DO:関数に切り出したい
+	// DO:関数に切り出したい?
 	pairID, err := getPairID(c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
@@ -409,7 +408,7 @@ func (h *Handler) GetPairStatus(c echo.Context) error {
 func (h *Handler) GetMoneyRecords(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	// DO:388行まで、外に関数切り出す？ただ、pairIDとかも使うから、それをひきつがないと
+	// DO:388行まで、外に関数切り出す？
 	pairID, err := getPairID(c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
@@ -437,7 +436,6 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 	moneyRecords, err := h.MoneyRepo.GetMoneyRecordsByPairID(ctx, pairID)
 	// TODO: not found handling
 	// http.StatusNotFound(404)
-	// DO:ペアにおけるレコードが無い場合、Rsponseはnullになっている
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusNotFound, "Record not found.")
