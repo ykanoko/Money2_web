@@ -30,6 +30,12 @@ type InitializeResponse struct {
 	Message string `json:"message"`
 }
 
+type userReponse struct {
+	ID      int64   `json:"id"`
+	Name    string  `json:"name"`
+	Balance float64 `json:"balance"`
+}
+
 type registerRequest struct {
 	User1Name string `json:"user1_name" validate:"required"`
 	User2Name string `json:"user2_name" validate:"required"`
@@ -37,11 +43,9 @@ type registerRequest struct {
 }
 
 type registerResponse struct {
-	PairID    int64  `json:"pair_id"`
-	User1ID   int64  `json:"user1_id"`
-	User1Name string `json:"user1_name"`
-	User2ID   int64  `json:"user2_id"`
-	User2Name string `json:"user2_name"`
+	PairID int64       `json:"pair_id"`
+	User1  userReponse `json:"user1"`
+	User2  userReponse `json:"user2"`
 }
 
 type loginRequest struct {
@@ -50,10 +54,10 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	PairID  int64  `json:"id"`
-	User1ID int64  `json:"user1_id"`
-	User2ID int64  `json:"user2_id"`
-	Token   string `json:"token"`
+	PairID int64       `json:"id"`
+	User1  userReponse `json:"user1"`
+	User2  userReponse `json:"user2"`
+	Token  string      `json:"token"`
 }
 
 type getPairStatusReponse struct {
@@ -94,14 +98,14 @@ type addPairExpenseRecordResponse struct {
 	Money2ID int64 `json:"money2_id"`
 }
 
-type addIndivisualExpenseRecordRequest struct {
-	UserID int64 `form:"user_id" validate:"required"`
-	Amount int64 `form:"amount" validate:"required"`
-}
+// type addIndivisualExpenseRecordRequest struct {
+// 	UserID int64 `form:"user_id" validate:"required"`
+// 	Amount int64 `form:"amount" validate:"required"`
+// }
 
-type addIndivisualExpenseRecordResponse struct {
-	Money2ID int64 `json:"money2_id"`
-}
+// type addIndivisualExpenseRecordResponse struct {
+// 	Money2ID int64 `json:"money2_id"`
+// }
 
 type Handler struct {
 	DB        *sql.DB
@@ -172,7 +176,11 @@ func (h *Handler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, registerResponse{PairID: pairID, User1ID: user1ID, User1Name: req.User1Name, User2ID: user2ID, User2Name: req.User2Name})
+	return c.JSON(http.StatusOK, registerResponse{
+		PairID: pairID,
+		User1:  userReponse{ID: user1ID, Name: req.User1Name, Balance: 0},
+		User2:  userReponse{ID: user2ID, Name: req.User2Name, Balance: 0},
+	})
 }
 
 func (h *Handler) Login(c echo.Context) error {
@@ -185,7 +193,7 @@ func (h *Handler) Login(c echo.Context) error {
 
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "id and password are both required")
+		return echo.NewHTTPError(http.StatusBadRequest, "Pair ID and password are both required")
 	}
 
 	pair, err := h.UserRepo.GetPair(ctx, req.PairID)
@@ -215,12 +223,22 @@ func (h *Handler) Login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	user1, err := h.UserRepo.GetUser(ctx, pair.User1ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	user2, err := h.UserRepo.GetUser(ctx, pair.User2ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
 	return c.JSON(http.StatusOK, loginResponse{
-		PairID:  pair.ID,
-		User1ID: pair.User1ID,
-		User2ID: pair.User2ID,
-		Token:   encodedToken,
+		PairID: pair.ID,
+		User1:  userReponse{ID: user1.ID, Name: user1.Name, Balance: user1.Balance},
+		User2:  userReponse{ID: user2.ID, Name: user2.Name, Balance: user2.Balance},
+		Token:  encodedToken,
 	})
+
 }
 
 func getPairID(c echo.Context) (int64, error) {
