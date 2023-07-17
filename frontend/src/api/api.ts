@@ -41,15 +41,11 @@ export type GetMoneyRecord = {
 };
 
 export async function registerUser(data: POSTRegisterRequest) {
-  try {
     const dat = JSON.stringify(data);
     const headers = { "Content-Type": "application/json" };
 
     const response = await axios.post(server + "/register", dat, { headers });
     return response;
-  } catch (error) {
-    console.error("POSTリクエストが失敗しました:", error);
-  }
 }
 
 export interface POSTLoginRequest {
@@ -116,7 +112,6 @@ export async function addIndivisualExpenseRecord(
 }
 
 export async function getMoneyRecord(token: string) {
-  try {
     const headers = {
       Authorization: `Bearer ${token}`,
     };
@@ -130,7 +125,4 @@ export async function getMoneyRecord(token: string) {
       money_records: money_records.data,
     };
     return data;
-  } catch (error) {
-    console.error("GETリクエストが失敗しました:", error);
-  }
 }
