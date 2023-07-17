@@ -53,15 +53,14 @@ func run(ctx context.Context) int {
 		fmt.Println("failed to load environment variables", err)
 	}
 	frontURL := os.Getenv("FRONT_URL")
-	fmt.Println("frontURL", []string{frontURL, "https://money2-web.vercel.app/", "money2-o2ixfkemr-ykanoko.vercel.app", "https://money2-web.vercel.app"})
 	if frontURL == "" {
-		// frontURL = "http://localhost:3000"
-		frontURL = "https://money2-web.vercel.app/"
+		frontURL = "http://localhost:3000"
+		// frontURL = "https://money2-web.vercel.app"
 	}
-	fmt.Println("frontURLCORS", []string{frontURL, "https://money2-web.vercel.app/", "money2-o2ixfkemr-ykanoko.vercel.app", "https://money2-web.vercel.app"})
+	fmt.Println("URL:", frontURL)
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{frontURL, "https://money2-web.vercel.app/", "money2-o2ixfkemr-ykanoko.vercel.app", "https://money2-web.vercel.app"},
+		AllowOrigins: []string{frontURL},
 		AllowMethods: []string{"GET", "PUT", "DELETE", "OPTIONS", "POST"},
 	}))
 	e.Use(middleware.BodyLimit("5M"))
