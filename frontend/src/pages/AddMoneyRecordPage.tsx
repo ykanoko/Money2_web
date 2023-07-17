@@ -138,8 +138,8 @@ export default function AddMoneyRecordPage() {
           <SegmentedControl
             color="blue"
             data={[
-              { label: user1?.name, value: user1?.id.toString() },
-              { label: user2?.name, value: user2?.id.toString() },
+              { label: user1?.name, value: user1?.id?.toString() },
+              { label: user2?.name, value: user2?.id?.toString() },
             ]}
             {...form.getInputProps("user_id")}
           />
