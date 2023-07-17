@@ -176,6 +176,12 @@ func (h *Handler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	fmt.Println("response:", registerResponse{
+		PairID: pairID,
+		User1:  userReponse{ID: user1ID, Name: req.User1Name, Balance: 0},
+		User2:  userReponse{ID: user2ID, Name: req.User2Name, Balance: 0},
+	})
+
 	return c.JSON(http.StatusOK, registerResponse{
 		PairID: pairID,
 		User1:  userReponse{ID: user1ID, Name: req.User1Name, Balance: 0},
