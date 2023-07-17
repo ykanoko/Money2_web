@@ -61,7 +61,7 @@ func run(ctx context.Context) int {
 	fmt.Println("frontURLCORS", []string{frontURL})
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{frontURL},
+		AllowOrigins: []string{"*"},
 		AllowMethods: []string{"GET", "PUT", "DELETE", "OPTIONS", "POST"},
 	}))
 	e.Use(middleware.BodyLimit("5M"))
