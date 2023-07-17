@@ -2,6 +2,10 @@
 
 家計簿 Web アプリ：複数人での金銭の管理を容易に行うことができる。
 
+## Deployed URL
+
+https://money2-web.vercel.app/register
+
 ## Project Structure
 
 - Backend(GO)
