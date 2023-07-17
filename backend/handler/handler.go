@@ -474,7 +474,7 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 
 	var typeName string
 	var userName string
-	var res []getMoneyRecordsResponse
+	res := []getMoneyRecordsResponse{}
 	for _, moneyRecord := range moneyRecords {
 		for _, typ := range types {
 			if typ.ID == moneyRecord.TypeID {
@@ -494,7 +494,7 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-// // DO:Creat!!!!!!!
+// // DO:Create!!!!!!!
 // func (h *Handler) AddIndivisualExpenseRecord(c echo.Context) error {
 // 	ctx := c.Request().Context()
 
