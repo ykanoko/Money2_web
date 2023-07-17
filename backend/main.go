@@ -53,8 +53,10 @@ func run(ctx context.Context) int {
 		fmt.Println("failed to load environment variables", err)
 	}
 	frontURL := os.Getenv("FRONT_URL")
+	fmt.Println("frontURL", frontURL)
 	if frontURL == "" {
-		frontURL = "http://localhost:3000"
+		// frontURL = "http://localhost:3000"
+		frontURL = "https://money2-web.vercel.app/"
 	}
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{frontURL},
