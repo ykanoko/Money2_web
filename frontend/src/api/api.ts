@@ -43,7 +43,10 @@ export type GetMoneyRecord = {
 export async function registerUser(data: POSTRegisterRequest) {
   try {
     const dat = JSON.stringify(data);
-    const headers = { "Content-Type": "application/json" };
+    const headers = { "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+"Access-Control-Allow-Methods": "POST,GET",
+"Access-Control-Allow-Headers":"Content-Type" };
 
     const response = await axios.post(server + "/register", dat, { headers });
     return response;
