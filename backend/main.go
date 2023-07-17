@@ -23,6 +23,10 @@ import (
 コメント
 */
 
+// TODO:大量のユーザーに耐えられる仕組み作り
+// DO:Dlete, Update機能追加
+// DO:デプロイするとsqlite3のデータが消えてしまうのを修正
+
 const (
 	exitOK = iota
 	exitError
