@@ -4,10 +4,12 @@ import AddMoneyRecordPage from "./pages/AddMoneyRecordPage";
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import MoneyRecordPage from "./pages/MoneyRecordsPage";
+import { Notifications } from "@mantine/notifications";
 
 export default function App() {
   return (
     <MantineProvider withGlobalStyles withNormalizeCSS>
+      <Notifications />
       <BrowserRouter>
         <Routes>
           <Route path="/register" element={<RegisterPage />} />

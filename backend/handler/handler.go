@@ -314,8 +314,6 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	req := new(addPairExpenseRecordRequest)
-	fmt.Println(req, req.Amount, req.UserID)
-
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -323,6 +321,10 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
+	}
+
+	if req.Amount <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Amount have to be >0")
 	}
 
 	// DO:関数に切り出したい?
@@ -465,7 +467,6 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	// DO:moneyRecordsがnullになるときの対応
 
 	types, err := h.MoneyRepo.GetTypes(ctx)
 	if err != nil {

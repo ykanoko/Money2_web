@@ -13,6 +13,7 @@ import { useForm } from "@mantine/form";
 import { useLocalStorage } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 import { User } from "../types/user";
+import { notifications } from "@mantine/notifications";
 
 // rafceを打つ
 export default function LoginPage() {
@@ -36,12 +37,21 @@ export default function LoginPage() {
   });
 
   function handleSubmit(values: POSTLoginRequest) {
-    loginUser(values).then((res) => {
-      setToken(res?.data.token);
-      setUser1(res?.data.user1);
-      setUser2(res?.data.user2);
-      navigate("/");
-    });
+    loginUser(values)
+      .then((res) => {
+        setToken(res?.data.token);
+        setUser1(res?.data.user1);
+        setUser2(res?.data.user2);
+        navigate("/");
+      })
+      .catch((err) => {
+        console.log(err);
+        notifications.show({
+          title: "Error!",
+          message: "failed to login",
+          color: "red",
+        });
+      });
   }
   // DO:validation 項目埋まっていない時は、submitできないようにできていない（通知付き）
 

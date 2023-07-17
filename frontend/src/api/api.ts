@@ -57,79 +57,62 @@ export interface POSTLoginRequest {
   password: string;
 }
 export async function loginUser(data: POSTLoginRequest) {
-  try {
-    const dat = JSON.stringify(data);
-    const headers = { "Content-Type": "application/json" };
+  const dat = JSON.stringify(data);
+  const headers = { "Content-Type": "application/json" };
 
-    const response = await axios.post(server + "/login", dat, { headers });
-    return response;
-  } catch (error) {
-    console.error("POSTリクエストが失敗しました:", error);
-  }
+  const response = await axios.post(server + "/login", dat, { headers });
+  return response;
 }
-
 export async function addIncomeRecord(
   data: AddIncomeRecordRequest,
   token: string,
 ) {
-  try {
-    const dat = JSON.stringify(data);
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
+  const dat = JSON.stringify(data);
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 
-    const response = await axios.post(server + "/record_income", dat, {
-      headers,
-    });
-    return response;
-  } catch (error) {
-    console.error("POSTリクエストが失敗しました:", error);
-  }
+  const response = await axios.post(server + "/record_income", dat, {
+    headers,
+  });
+  return response;
 }
 
 export async function addPairExpenseRecord(
   data: AddPairExpenseRecordRequest,
   token: string,
 ) {
-  try {
-    const dat = JSON.stringify(data);
+  const dat = JSON.stringify(data);
 
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 
-    const response = await axios.post(server + "/record_pair_expense", dat, {
-      headers,
-    });
-    return response;
-  } catch (error) {
-    console.error("POSTリクエストが失敗しました:", error);
-  }
+  const response = await axios.post(server + "/record_pair_expense", dat, {
+    headers,
+  });
+  return response;
 }
 
 export async function addIndivisualExpenseRecord(
   data: AddIndivisualExpenseRecordRequest,
   token: string,
 ) {
-  try {
-    const dat = JSON.stringify(data);
+  const dat = JSON.stringify(data);
 
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 
-    const response = await axios.post(
-      server + "/record_indivisual_expense",
-      dat,
-      { headers },
-    );
-    return response;
-  } catch (error) {
-    console.error("POSTリクエストが失敗しました:", error);
-  }
+  const response = await axios.post(
+    server + "/record_indivisual_expense",
+    dat,
+    { headers },
+  );
+  return response;
 }
 
 export async function getMoneyRecord(token: string) {

@@ -20,6 +20,7 @@ import { useLocalStorage } from "@mantine/hooks";
 import { User } from "../types/user";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { notifications } from "@mantine/notifications";
 
 type Form = AddIncomeRecordRequest & {
   payType: "1" | "2";
@@ -54,23 +55,38 @@ export default function AddMoneyRecordPage() {
   }, [token]);
 
   // DO:loginできてなかったらログインページに移動させる
-  // DO:amountが0でも、POSTに失敗しても、次のページに進んでしまう
+  // DO:amountが0でerror出す
   function handleSubmit(values: Form) {
     values.user_id = Number(values.user_id);
     if (values.payType === "1") {
-      addIncomeRecord(
-        { amount: values.amount, user_id: values.user_id },
-        token,
-      ).then(() => {
-        navigate("/money_record");
-      });
+      addIncomeRecord({ amount: values.amount, user_id: values.user_id }, token)
+        .then(() => {
+          navigate(0);
+        })
+        .catch((err) => {
+          console.log(err);
+          notifications.show({
+            title: "Error!",
+            message: "failed to add money record",
+            color: "red",
+          });
+        });
     } else if (values.payType === "2") {
       addPairExpenseRecord(
         { amount: values.amount, user_id: values.user_id },
         token,
-      ).then(() => {
-        navigate("/money_record");
-      });
+      )
+        .then(() => {
+          navigate(0);
+        })
+        .catch((err) => {
+          console.log(err);
+          notifications.show({
+            title: "Error!",
+            message: "failed to add money record",
+            color: "red",
+          });
+        });
     }
   }
 
@@ -133,6 +149,7 @@ export default function AddMoneyRecordPage() {
             <Button type="submit">Submit</Button>
           </Group>
           <Anchor href="/money_record">Money Record</Anchor>
+          <Anchor href="/login">Login</Anchor>
         </Stack>
       </form>
       <Title order={4} mt={"md"}>
