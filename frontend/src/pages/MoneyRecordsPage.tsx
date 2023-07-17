@@ -22,7 +22,6 @@ export default function MoneyRecordPage() {
     }
     getMoneyRecord(token).then((res) => {
       setMoneyRecord(res);
-      console.log(res);
     });
   }, [token]);
 

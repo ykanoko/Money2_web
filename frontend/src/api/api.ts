@@ -43,11 +43,9 @@ export type GetMoneyRecord = {
 export async function registerUser(data: POSTRegisterRequest) {
   try {
     const dat = JSON.stringify(data);
-    console.log(dat);
     const headers = { "Content-Type": "application/json" };
 
     const response = await axios.post(server + "/register", dat, { headers });
-    console.log(response);
     return response;
   } catch (error) {
     console.error("POSTリクエストが失敗しました:", error);
@@ -61,11 +59,9 @@ export interface POSTLoginRequest {
 export async function loginUser(data: POSTLoginRequest) {
   try {
     const dat = JSON.stringify(data);
-    console.log(dat);
     const headers = { "Content-Type": "application/json" };
 
     const response = await axios.post(server + "/login", dat, { headers });
-    console.log(response);
     return response;
   } catch (error) {
     console.error("POSTリクエストが失敗しました:", error);
@@ -78,7 +74,6 @@ export async function addIncomeRecord(
 ) {
   try {
     const dat = JSON.stringify(data);
-    console.log("addIncomeRecord", dat);
     const headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -87,7 +82,6 @@ export async function addIncomeRecord(
     const response = await axios.post(server + "/record_income", dat, {
       headers,
     });
-    console.log(response);
     return response;
   } catch (error) {
     console.error("POSTリクエストが失敗しました:", error);
@@ -109,7 +103,6 @@ export async function addPairExpenseRecord(
     const response = await axios.post(server + "/record_pair_expense", dat, {
       headers,
     });
-    console.log(response);
     return response;
   } catch (error) {
     console.error("POSTリクエストが失敗しました:", error);
@@ -133,7 +126,6 @@ export async function addIndivisualExpenseRecord(
       dat,
       { headers },
     );
-    console.log(response);
     return response;
   } catch (error) {
     console.error("POSTリクエストが失敗しました:", error);
@@ -150,8 +142,6 @@ export async function getMoneyRecord(token: string) {
       axios.get(server + "/pair_status", { headers }),
       axios.get(server + "/money_records", { headers }),
     ]);
-    // DO:これ以降のconsole.log消す
-    console.log(money_records.data, pair_status.data);
     const data: GetMoneyRecord = {
       pair_status: pair_status.data,
       money_records: money_records.data,

@@ -50,7 +50,6 @@ export default function AddMoneyRecordPage() {
     }
     getMoneyRecord(token).then((res) => {
       setMoneyRecord(res);
-      console.log(res);
     });
   }, [token]);
 
