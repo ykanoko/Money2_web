@@ -1,4 +1,4 @@
-.env
+# .env
 *.sqlite3
 10_data.sql
 *.log
