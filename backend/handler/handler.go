@@ -81,8 +81,8 @@ type getMoneyRecordsResponse struct {
 // }
 
 type addIncomeRecordRequest struct {
-	UserID int64 `form:"user_id" validate:"required"`
-	Amount int64 `form:"amount" validate:"required"`
+	UserID int64 `json:"user_id" validate:"required"`
+	Amount int64 `json:"amount" validate:"required"`
 }
 
 type addIncomeRecordResponse struct {
@@ -90,8 +90,8 @@ type addIncomeRecordResponse struct {
 }
 
 type addPairExpenseRecordRequest struct {
-	UserID int64 `form:"user_id" validate:"required"`
-	Amount int64 `form:"amount" validate:"required"`
+	UserID int64 `json:"user_id" validate:"required"`
+	Amount int64 `json:"amount" validate:"required"`
 }
 
 type addPairExpenseRecordResponse struct {
@@ -99,8 +99,8 @@ type addPairExpenseRecordResponse struct {
 }
 
 // type addIndivisualExpenseRecordRequest struct {
-// 	UserID int64 `form:"user_id" validate:"required"`
-// 	Amount int64 `form:"amount" validate:"required"`
+// 	UserID int64 `json:"user_id" validate:"required"`
+// 	Amount int64 `json:"amount" validate:"required"`
 // }
 
 // type addIndivisualExpenseRecordResponse struct {
@@ -261,6 +261,8 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
+	fmt.Println(req, req.Amount, req.UserID)
+
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
@@ -312,6 +314,8 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	req := new(addPairExpenseRecordRequest)
+	fmt.Println(req, req.Amount, req.UserID)
+
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -451,6 +455,7 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
+	// DO:引数1つ追加（取ってくる行数がフロントエンドで複数パターン必要）
 	moneyRecords, err := h.MoneyRepo.GetMoneyRecordsByPairID(ctx, pairID)
 	// TODO: not found handling
 	// http.StatusNotFound(404)

@@ -1,44 +1,59 @@
-import { Table } from "@mantine/core"
-import { getMoneyRecords } from "../api/api"
+import { Anchor, Stack, Table, Title } from "@mantine/core"
+import { GetMoneyRecord, getMoneyRecord} from "../api/api"
 import {useEffect, useState} from "react"
+import { useLocalStorage } from "@mantine/hooks";
+import { User } from "../types/user";
 
-type MoneyRecordResponse = {
-  balance_user1: number   
-	balance_user2 :number   
-	pay_user     : string  
-	pay_amount   : number 
-records: MoneyRecord[]
-}
+export default function MoneyRecordPage() {
+    const [moneyRecord, setMoneyRecord] = useState<GetMoneyRecord>()
+    const [token, ] = useLocalStorage({ key: 'token', defaultValue: '' });
+    const [user1, ] = useLocalStorage<User | null>({ key: 'user1', defaultValue: null });
+    const [user2, ] = useLocalStorage<User | null>({ key: 'user2', defaultValue: null });
 
-type MoneyRecord = {
-    id: number
-    date: string
-    type: string
-	user         :string 
-	amount       :number   
-}
-const MoneyRecordsPage = () => {
-    // usestaと打つ
-    const [moneyRecordsResponse, setMoneyRecordsResponse] = useState<MoneyRecordResponse>()
 useEffect( () => {
-    getMoneyRecords().then(res =>{
-        setMoneyRecordsResponse(res)
+    if (token === ''){
+      return
+    }
+    getMoneyRecord(token).then(res =>{
+        setMoneyRecord(res)
         console.log(res)
     })
-}, [])
+}, [token])
 
-const rows = moneyRecordsResponse?.records.map((moneyRecord) => (
-    <tr key={moneyRecord.id}>
-      <td>{moneyRecord.id}</td>
-      <td>{moneyRecord.date}</td>
-      <td>{moneyRecord.type}</td>
-      <td>{moneyRecord.user}</td>
-      <td>{moneyRecord.amount}</td>
+const pair_status_row = <tr>
+  <td>{moneyRecord?.pair_status.balance_user1}</td>
+  <td>{moneyRecord?.pair_status.balance_user2}</td>
+  <td>{moneyRecord?.pair_status.pay_user}</td>
+  <td>{moneyRecord?.pair_status.pay_amount}</td>
+</tr>
+
+const rows = moneyRecord?.money_records.map((money_record) => (
+    <tr key={money_record.money2_id}>
+      <td>{money_record.money2_id}</td>
+      <td>{money_record.date}</td>
+      <td>{money_record.type}</td>
+      <td>{money_record.user}</td>
+      <td>{money_record.amount}</td>
     </tr>
   ));
 
 return (
-    <Table>
+    <Stack  maw={600} mx="auto">
+      <Title order={2} mt={"md"}>MoneyRecord</Title>
+      <Title order={4} mt={"md"}>Pair Status</Title>      
+      <Table striped withBorder>
+      <thead>
+        <tr>
+          <th>{user1?.name}の残金</th>
+          <th>{user2?.name}の残金</th>
+          <th>払うべき人</th>
+          <th>払うべき金額</th>
+        </tr>
+      </thead>
+      <tbody>{pair_status_row}</tbody>
+    </Table>
+    <Title order={4} mt={"md"}>Money Records</Title>      
+      <Table striped withBorder>
       <thead>
         <tr>
           <th>ID</th>
@@ -59,7 +74,10 @@ return (
       </thead>
       <tbody>{rows}</tbody>
     </Table>
+    <Anchor href="/">
+      Add Money Record
+    </Anchor>
+    </Stack>
+    
   )
 }
-
-export default MoneyRecordsPage
