@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -47,7 +48,10 @@ func run(ctx context.Context) int {
 		Output: io.MultiWriter(os.Stdout, lf),
 	})
 	e.Use(logger)
-
+	err := godotenv.Load(".env")
+	if err != nil {
+		fmt.Println("failed to load environment variables", err)
+	}
 	frontURL := os.Getenv("FRONT_URL")
 	if frontURL == "" {
 		frontURL = "http://localhost:3000"
