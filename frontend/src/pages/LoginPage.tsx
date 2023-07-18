@@ -14,9 +14,11 @@ import { useLocalStorage } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 import { User } from "../types/user";
 import { notifications } from "@mantine/notifications";
+import { useState } from "react";
 
 // rafceを打つ
 export default function LoginPage() {
+  const [isLoading, setIsLoading] = useState(false);
   const [pairID] = useLocalStorage({ key: "pair_id", defaultValue: "" });
   const [, setToken] = useLocalStorage({ key: "token", defaultValue: "" });
   const [, setUser1] = useLocalStorage<User | null>({
@@ -37,6 +39,7 @@ export default function LoginPage() {
   });
 
   function handleSubmit(values: POSTLoginRequest) {
+    setIsLoading(true);
     loginUser(values)
       .then((res) => {
         setToken(res?.data.token);
@@ -51,6 +54,8 @@ export default function LoginPage() {
           message: "failed to login",
           color: "red",
         });
+      }).finally(() => {
+        setIsLoading(false);
       });
   }
   // DO:validation 項目埋まっていない時は、submitできないようにできていない（通知付き）
@@ -76,7 +81,7 @@ export default function LoginPage() {
             />
 
             <Group position="right" mt="md">
-              <Button type="submit">Submit</Button>
+              <Button type="submit"  loading={isLoading}>Submit</Button>
             </Group>
             <Anchor href="/register">Register</Anchor>
           </Stack>
