@@ -5,6 +5,10 @@ import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import MoneyRecordPage from "./pages/MoneyRecordsPage";
 import { Notifications } from "@mantine/notifications";
+import { healthCheck } from "./api/api";
+
+// renderのcold start用
+healthCheck();
 
 export default function App() {
   return (

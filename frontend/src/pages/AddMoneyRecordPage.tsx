@@ -49,13 +49,15 @@ export default function AddMoneyRecordPage() {
     if (token === "") {
       return;
     }
-    getMoneyRecord(token).then((res) => {
-      setMoneyRecord(res);
-    }).catch(err=>{
-      console.log(err)
-      navigate("/login")
-    });
-  }, [token,navigate]);
+    getMoneyRecord(token)
+      .then((res) => {
+        setMoneyRecord(res);
+      })
+      .catch((err) => {
+        console.log(err);
+        navigate("/login");
+      });
+  }, [token, navigate]);
 
   // DO:loginできてなかったらログインページに移動させる
   // DO:amountが0でerror出す

@@ -41,11 +41,11 @@ export type GetMoneyRecord = {
 };
 
 export async function registerUser(data: POSTRegisterRequest) {
-    const dat = JSON.stringify(data);
-    const headers = { "Content-Type": "application/json" };
+  const dat = JSON.stringify(data);
+  const headers = { "Content-Type": "application/json" };
 
-    const response = await axios.post(server + "/register", dat, { headers });
-    return response;
+  const response = await axios.post(server + "/register", dat, { headers });
+  return response;
 }
 
 export interface POSTLoginRequest {
@@ -112,17 +112,23 @@ export async function addIndivisualExpenseRecord(
 }
 
 export async function getMoneyRecord(token: string) {
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
 
-    const [pair_status, money_records] = await Promise.all([
-      axios.get(server + "/pair_status", { headers }),
-      axios.get(server + "/money_records", { headers }),
-    ]);
-    const data: GetMoneyRecord = {
-      pair_status: pair_status.data,
-      money_records: money_records.data,
-    };
-    return data;
+  const [pair_status, money_records] = await Promise.all([
+    axios.get(server + "/pair_status", { headers }),
+    axios.get(server + "/money_records", { headers }),
+  ]);
+  const data: GetMoneyRecord = {
+    pair_status: pair_status.data,
+    money_records: money_records.data,
+  };
+  return data;
+}
+
+export function healthCheck() {
+  axios.get(server + "/healthz").catch((error) => {
+    console.log("health checked", error);
+  });
 }

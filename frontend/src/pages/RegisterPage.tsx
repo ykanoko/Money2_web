@@ -11,8 +11,10 @@ import { useForm } from "@mantine/form";
 import { POSTRegisterRequest, registerUser } from "../api/api";
 import { useLocalStorage } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 export default function RegisterPage() {
+  const [isLoading, setIsLoading] = useState(false);
   const [, setPairID] = useLocalStorage({ key: "pair_id", defaultValue: "" });
   // TODO:現在は1組のみの登録を想定しているため、storageに入れた
   const navigate = useNavigate();
@@ -24,10 +26,15 @@ export default function RegisterPage() {
     },
   });
   function handleSubmit(values: POSTRegisterRequest) {
-    registerUser(values).then((res) => {
-      setPairID(res?.data.pair_id);
-      navigate("/login");
-    });
+    setIsLoading(true);
+    registerUser(values)
+      .then((res) => {
+        setPairID(res?.data.pair_id);
+        navigate("/login");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }
   // DO:Submitボタンを押したら、その後一定時間押せないようにする？
   // TODO:メアドに紐づけたい？、googleアカウント等？
@@ -59,7 +66,9 @@ export default function RegisterPage() {
             />
 
             <Group position="right" mt="md">
-              <Button type="submit">Submit</Button>
+              <Button type="submit" loading={isLoading}>
+                Submit
+              </Button>
             </Group>
             <Anchor href="/login">Login</Anchor>
           </Stack>
