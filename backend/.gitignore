@@ -3,3 +3,4 @@
 10_data.sql
 *.log
 tmp/*
+sql/*

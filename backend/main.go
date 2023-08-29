@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -76,21 +79,28 @@ func run(ctx context.Context) int {
 	}
 
 	// db
-	sqlDB, err := db.PrepareDB(ctx)
+	//////////////
+	sqlDB, err := sql.Open("mysql", os.Getenv("DSN"))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to prepare DB: %s\n", err)
-		return exitError
+		log.Fatalf("failed to connect: %v", err)
 	}
 	defer sqlDB.Close()
+
+	if err := sqlDB.Ping(); err != nil {
+		log.Fatalf("failed to ping: %v", err)
+	}
+
+	log.Println("Successfully connected to PlanetScale!")
 
 	h := handler.Handler{
 		DB:        sqlDB,
 		UserRepo:  db.NewUserRepository(sqlDB),
 		MoneyRepo: db.NewMoneyRepository(sqlDB),
 	}
+	/////////////////
 
 	// Routes
-	e.POST("/initialize", h.Initialize)
+	// e.POST("/initialize", h.Initialize)
 	e.POST("/register", h.Register)
 	e.POST("/login", h.Login)
 	e.GET("/log", h.AccessLog)

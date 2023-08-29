@@ -1,7 +1,0 @@
-BEGIN TRANSACTION;
-
-INSERT INTO "types" VALUES(1,'収入');
-INSERT INTO "types" VALUES(2,'合計支出');
-INSERT INTO "types" VALUES(3,'支出');
-
-COMMIT;

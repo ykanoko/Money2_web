@@ -31,7 +31,7 @@ func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
+	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE id = LAST_INSERT_ID()")
 
 	var id int64
 	return id, row.Scan(&id)
@@ -43,7 +43,7 @@ func (r *UserDBRepository) AddPair(ctx context.Context, pair domain.Pair) (int64
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
+	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE id = LAST_INSERT_ID()")
 
 	var id int64
 	return id, row.Scan(&id)
@@ -118,7 +118,7 @@ func (r *MoneyDBRepository) AddMoneyRecord(ctx context.Context, money domain.Mon
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE rowid = LAST_INSERT_ROWID()")
+	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE id = LAST_INSERT_ID()")
 
 	var res domain.Money
 	return res, row.Scan(&res.ID, &res.PairID, &res.TypeID, &res.UserID, &res.Amount, &res.CreatedAt)
