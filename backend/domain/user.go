@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type Pair struct {
 	ID       int64
 	Password string
@@ -7,7 +9,7 @@ type Pair struct {
 	User2ID  int64
 	// User1を基準とした精算額
 	CalculationUser1 float64
-	CreatedAt        string
+	CreatedAt        time.Time
 }
 
 type User struct {

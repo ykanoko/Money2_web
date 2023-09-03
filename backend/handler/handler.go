@@ -488,10 +488,8 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 		} else if user2.ID == moneyRecord.UserID {
 			userName = user2.Name
 		}
-		res = append(res, getMoneyRecordsResponse{Money2ID: moneyRecord.ID, Date: moneyRecord.CreatedAt, Type: typeName, User: userName, Amount: moneyRecord.Amount})
+		res = append(res, getMoneyRecordsResponse{Money2ID: moneyRecord.ID, Date: moneyRecord.CreatedAt.In(time.FixedZone("JST", 9*60*60)).Format("2006/01/02 15:04:05"), Type: typeName, User: userName, Amount: moneyRecord.Amount})
 	}
-
-	// res := getMoneyRecordsResponse{Records: resMoneyRecords}
 	return c.JSON(http.StatusOK, res)
 }
 
