@@ -95,14 +95,20 @@ export default function AddMoneyRecordPage() {
     }
   }
 
-  const pair_status_row = (
+  const balance_row = (
     <tr>
       <td>{moneyRecord?.pair_status.balance_user1}</td>
       <td>{moneyRecord?.pair_status.balance_user2}</td>
+    </tr>
+  );
+
+  const pair_status_row = (
+    <tr>
       <td>{moneyRecord?.pair_status.pay_user}</td>
       <td>{moneyRecord?.pair_status.pay_amount}</td>
     </tr>
   );
+
   const rows = moneyRecord?.money_records.slice(0, 10).map((money_record) => (
     <tr key={money_record.money2_id}>
       <td>{money_record.money2_id}</td>
@@ -117,6 +123,7 @@ export default function AddMoneyRecordPage() {
     return (
       <Stack maw={300} mx="auto" mt={"md"}>
         You are not logged in
+        <Anchor href="/login">Login</Anchor>
         <Anchor href="/register">Register</Anchor>
       </Stack>
     );
@@ -158,19 +165,31 @@ export default function AddMoneyRecordPage() {
         </Stack>
       </form>
       <Title order={4} mt={"md"}>
-        Pair Status
+        Balance
       </Title>
       <Table striped withBorder>
         <thead>
           <tr>
             <th>{user1?.name}の残金</th>
             <th>{user2?.name}の残金</th>
+          </tr>
+        </thead>
+        <tbody>{balance_row}</tbody>
+      </Table>
+
+      <Title order={4} mt={"md"}>
+        Pair Status
+      </Title>
+      <Table striped withBorder>
+        <thead>
+          <tr>
             <th>払うべき人</th>
             <th>払うべき金額</th>
           </tr>
         </thead>
         <tbody>{pair_status_row}</tbody>
       </Table>
+
       <Title order={4} mt={"md"}>
         Money Records
       </Title>

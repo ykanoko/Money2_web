@@ -63,6 +63,7 @@ export default function MoneyRecordPage() {
         </thead>
         <tbody>{pair_status_row}</tbody>
       </Table>
+      <Anchor href="/">Add Money Record</Anchor>
       <Title order={4} mt={"md"}>
         Money Records
       </Title>
@@ -86,7 +87,6 @@ export default function MoneyRecordPage() {
         </thead>
         <tbody>{rows}</tbody>
       </Table>
-      <Anchor href="/">Add Money Record</Anchor>
     </Stack>
   );
 }

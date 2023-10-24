@@ -131,7 +131,7 @@ func (r *MoneyDBRepository) GetLatestMoneyRecordByPairID(ctx context.Context, pa
 }
 
 func (r *MoneyDBRepository) GetMoneyRecordsByPairID(ctx context.Context, pair_id int64) ([]domain.Money, error) {
-	rows, err := r.QueryContext(ctx, "SELECT * FROM money2 WHERE pair_id = ? ORDER BY created_at DESC LIMIT 30", pair_id)
+	rows, err := r.QueryContext(ctx, "SELECT * FROM money2 WHERE pair_id = ? ORDER BY created_at DESC LIMIT 100", pair_id)
 	if err != nil {
 		return nil, err
 	}
