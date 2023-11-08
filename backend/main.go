@@ -21,14 +21,8 @@ import (
 	"github.com/ykanoko/Money2_web/backend/handler"
 )
 
-/*
-複数行の
-コメント
-*/
-
 // TODO:大量のユーザーに耐えられる仕組み作り
 // DO:Dlete, Update機能追加
-// DO:デプロイするとsqlite3のデータが消えてしまうのを修正
 
 const (
 	exitOK = iota
@@ -79,7 +73,6 @@ func run(ctx context.Context) int {
 	}
 
 	// db
-	//////////////
 	sqlDB, err := sql.Open("mysql", os.Getenv("DSN"))
 	if err != nil {
 		log.Fatalf("failed to connect: %v", err)
@@ -97,7 +90,6 @@ func run(ctx context.Context) int {
 		UserRepo:  db.NewUserRepository(sqlDB),
 		MoneyRepo: db.NewMoneyRepository(sqlDB),
 	}
-	/////////////////
 
 	// Routes
 	// e.POST("/initialize", h.Initialize)

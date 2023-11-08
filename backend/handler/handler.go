@@ -261,8 +261,6 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	fmt.Println(req, req.Amount, req.UserID)
-
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
@@ -492,13 +490,3 @@ func (h *Handler) GetMoneyRecords(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, res)
 }
-
-// // DO:Create!!!!!!!
-// func (h *Handler) AddIndivisualExpenseRecord(c echo.Context) error {
-// 	ctx := c.Request().Context()
-
-// 	req := new(addMoneyRecordRequest)
-// 	if err := c.Bind(req); err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest, err)
-// 	}
-// }
