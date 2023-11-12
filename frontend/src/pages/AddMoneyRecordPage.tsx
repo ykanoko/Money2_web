@@ -135,7 +135,7 @@ export default function AddMoneyRecordPage() {
     );
   }
   return (
-    <Stack maw={600} mx="auto">
+    <Stack maw={600} mx="auto" pb={80} px={8}>
       <Title order={2} mt={"md"}>
         Add Money Record
       </Title>
