@@ -89,6 +89,15 @@ type addIncomeRecordResponse struct {
 	Money2ID int64 `json:"money2_id"`
 }
 
+type addExpenseRecordRequest struct {
+	UserID int64 `json:"user_id" validate:"required"`
+	Amount int64 `json:"amount" validate:"required"`
+}
+
+type addExpenseRecordResponse struct {
+	Money2ID int64 `json:"money2_id"`
+}
+
 type addPairExpenseRecordRequest struct {
 	UserID int64 `json:"user_id" validate:"required"`
 	Amount int64 `json:"amount" validate:"required"`
@@ -97,15 +106,6 @@ type addPairExpenseRecordRequest struct {
 type addPairExpenseRecordResponse struct {
 	Money2ID int64 `json:"money2_id"`
 }
-
-// type addIndivisualExpenseRecordRequest struct {
-// 	UserID int64 `json:"user_id" validate:"required"`
-// 	Amount int64 `json:"amount" validate:"required"`
-// }
-
-// type addIndivisualExpenseRecordResponse struct {
-// 	Money2ID int64 `json:"money2_id"`
-// }
 
 type Handler struct {
 	DB        *sql.DB
@@ -299,6 +299,7 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
 		PairID: pairID,
 		TypeID: 1,
+		// DO:typeTableいらない？
 		UserID: req.UserID,
 		Amount: req.Amount,
 	})
@@ -306,6 +307,61 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, addIncomeRecordResponse{Money2ID: moneyRecord.ID})
+}
+
+func (h *Handler) AddExpenseRecord(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	req := new(addExpenseRecordRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "all columns are required")
+	}
+
+	pairID, err := getPairID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	pair, err := h.UserRepo.GetPair(ctx, pairID)
+	// TODO: not found handling
+	// http.StatusNotFound(404)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Pair not found.")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if req.UserID != pair.User1ID && req.UserID != pair.User2ID {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "You don't belong to this pair.")
+	}
+
+	// 残金の変更
+	user, err := h.UserRepo.GetUser(ctx, req.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	if err := h.UserRepo.UpdateBalance(ctx, req.UserID, user.Balance-float64(req.Amount)); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	//money2 tableに登録
+	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
+		PairID: pairID,
+		TypeID: 2,
+		UserID: req.UserID,
+		Amount: req.Amount,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, addExpenseRecordResponse{Money2ID: moneyRecord.ID})
 }
 
 func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
@@ -373,7 +429,7 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 	//money2 tableに登録
 	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
 		PairID: pairID,
-		TypeID: 2,
+		TypeID: 3,
 		UserID: req.UserID,
 		Amount: req.Amount,
 	})
