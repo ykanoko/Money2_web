@@ -1,11 +1,13 @@
 import {
   Anchor,
   Button,
+  Card,
   Group,
   NumberInput,
   SegmentedControl,
   Stack,
   Table,
+  Text,
   Title,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
@@ -94,39 +96,24 @@ export default function AddMoneyRecordPage() {
             color: "red",
           });
         });
-    }else if (values.payType === "3") {
-    addPairExpenseRecord(
-      { amount: values.amount, user_id: values.user_id },
-      token,
-    )
-      .then(() => {
-        navigate(0);
-      })
-      .catch((err) => {
-        console.log(err);
-        notifications.show({
-          title: "Error!",
-          message: "failed to add money record",
-          color: "red",
+    } else if (values.payType === "3") {
+      addPairExpenseRecord(
+        { amount: values.amount, user_id: values.user_id },
+        token,
+      )
+        .then(() => {
+          navigate(0);
+        })
+        .catch((err) => {
+          console.log(err);
+          notifications.show({
+            title: "Error!",
+            message: "failed to add money record",
+            color: "red",
+          });
         });
-      });
+    }
   }
-
-  }
-
-  const balance_row = (
-    <tr>
-      <td>{moneyRecord?.pair_status.balance_user1}</td>
-      <td>{moneyRecord?.pair_status.balance_user2}</td>
-    </tr>
-  );
-
-  const pair_status_row = (
-    <tr>
-      <td>{moneyRecord?.pair_status.pay_user}</td>
-      <td>{moneyRecord?.pair_status.pay_amount}</td>
-    </tr>
-  );
 
   const rows = moneyRecord?.money_records.slice(0, 10).map((money_record) => (
     <tr key={money_record.money2_id}>
@@ -153,12 +140,12 @@ export default function AddMoneyRecordPage() {
         Add Money Record
       </Title>
       <form onSubmit={form.onSubmit((values) => handleSubmit(values))}>
-        <Stack maw={300} mx="auto">
+        <Stack maw={450} mx="auto">
           <SegmentedControl
             color="blue"
             data={[
               { label: "収入", value: "1" },
-              { label: '支出', value: "2" },
+              { label: "支出", value: "2" },
               { label: "合計支出", value: "3" },
             ]}
             {...form.getInputProps("payType")}
@@ -186,28 +173,51 @@ export default function AddMoneyRecordPage() {
       <Title order={4} mt={"md"}>
         Balance
       </Title>
-      <Table striped withBorder>
-        <thead>
-          <tr>
-            <th>{user1?.name}の残金</th>
-            <th>{user2?.name}の残金</th>
-          </tr>
-        </thead>
-        <tbody>{balance_row}</tbody>
-      </Table>
+      <Group position="center" grow>
+        <Card shadow="xs" withBorder>
+          <Text size="sm" mt="xs" c="dimmed">
+            <Text size="sm" mt="xs" c="dark" span fw={600}>
+              {user1?.name}
+            </Text>
+            の残金
+          </Text>
+          <Text fw={500} size="lg" mt="md" align="right">
+            {moneyRecord?.pair_status.balance_user1} 円
+          </Text>
+        </Card>
+        <Card shadow="xs" withBorder>
+          <Text size="sm" mt="xs" c="dimmed">
+            <Text size="sm" mt="xs" c="dark" span fw={600}>
+              {user2?.name}
+            </Text>
+            の残金
+          </Text>
+          <Text fw={500} size="lg" mt="md" align="right">
+            {moneyRecord?.pair_status.balance_user2} 円
+          </Text>
+        </Card>
+      </Group>
 
       <Title order={4} mt={"md"}>
         Pair Status
       </Title>
-      <Table striped withBorder>
-        <thead>
-          <tr>
-            <th>払うべき人</th>
-            <th>払うべき金額</th>
-          </tr>
-        </thead>
-        <tbody>{pair_status_row}</tbody>
-      </Table>
+      <Group position="center">
+        <Card shadow="xs" withBorder>
+          <Text size="sm" mt="xs" c="dimmed">
+            精算方法
+          </Text>
+          <Text size="sm" mt="xs" c="dimmed">
+            <Text fw={500} c="dark" size="lg" mt="md" span>
+              {moneyRecord?.pair_status.pay_user}
+            </Text>
+            が
+            <Text fw={500} c="dark" size="lg" mt="md" span>
+              {moneyRecord?.pair_status.pay_amount}
+            </Text>{" "}
+            円払う
+          </Text>
+        </Card>
+      </Group>
 
       <Title order={4} mt={"md"}>
         Money Records

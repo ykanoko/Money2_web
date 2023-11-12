@@ -54,7 +54,8 @@ export default function LoginPage() {
           message: "failed to login",
           color: "red",
         });
-      }).finally(() => {
+      })
+      .finally(() => {
         setIsLoading(false);
       });
   }
@@ -81,7 +82,9 @@ export default function LoginPage() {
             />
 
             <Group position="right" mt="md">
-              <Button type="submit"  loading={isLoading}>Submit</Button>
+              <Button type="submit" loading={isLoading}>
+                Submit
+              </Button>
             </Group>
             <Anchor href="/register">Register</Anchor>
           </Stack>

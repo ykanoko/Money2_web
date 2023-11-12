@@ -85,11 +85,9 @@ export async function addExpenseRecord(
     Authorization: `Bearer ${token}`,
   };
 
-  const response = await axios.post(
-    server + "/record_expense",
-    dat,
-    { headers },
-  );
+  const response = await axios.post(server + "/record_expense", dat, {
+    headers,
+  });
   return response;
 }
 
