@@ -11,11 +11,11 @@ export interface AddIncomeRecordRequest {
   user_id: number;
   amount: number;
 }
-export interface AddPairExpenseRecordRequest {
+export interface AddExpenseRecordRequest {
   user_id: number;
   amount: number;
 }
-export interface AddIndivisualExpenseRecordRequest {
+export interface AddPairExpenseRecordRequest {
   user_id: number;
   amount: number;
 }
@@ -75,6 +75,24 @@ export async function addIncomeRecord(
   return response;
 }
 
+export async function addExpenseRecord(
+  data: AddExpenseRecordRequest,
+  token: string,
+) {
+  const dat = JSON.stringify(data);
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+
+  const response = await axios.post(
+    server + "/record_expense",
+    dat,
+    { headers },
+  );
+  return response;
+}
+
 export async function addPairExpenseRecord(
   data: AddPairExpenseRecordRequest,
   token: string,
@@ -89,25 +107,6 @@ export async function addPairExpenseRecord(
   const response = await axios.post(server + "/record_pair_expense", dat, {
     headers,
   });
-  return response;
-}
-
-export async function addIndivisualExpenseRecord(
-  data: AddIndivisualExpenseRecordRequest,
-  token: string,
-) {
-  const dat = JSON.stringify(data);
-
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-
-  const response = await axios.post(
-    server + "/record_indivisual_expense",
-    dat,
-    { headers },
-  );
   return response;
 }
 

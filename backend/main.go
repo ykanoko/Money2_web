@@ -102,7 +102,7 @@ func run(ctx context.Context) int {
 	l.Use(echojwt.WithConfig(config))
 
 	l.POST("/record_income", h.AddIncomeRecord)
-	l.POST("/record_indivisual_expense", h.AddExpenseRecord)
+	l.POST("/record_expense", h.AddExpenseRecord)
 	l.POST("/record_pair_expense", h.AddPairExpenseRecord)
 	l.GET("/pair_status", h.GetPairStatus)
 	l.GET("/money_records", h.GetMoneyRecords)

@@ -13,6 +13,7 @@ import {
   AddIncomeRecordRequest,
   GetMoneyRecord,
   addIncomeRecord,
+  addExpenseRecord,
   addPairExpenseRecord,
   getMoneyRecord,
 } from "../api/api";
@@ -22,8 +23,9 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { notifications } from "@mantine/notifications";
 
+// DO:AddIncomeRecordRequestだけ用いるのでよいのか
 type Form = AddIncomeRecordRequest & {
-  payType: "1" | "2";
+  payType: "1" | "2" | "3";
 };
 export default function AddMoneyRecordPage() {
   const [user1] = useLocalStorage<User | null>({
@@ -40,7 +42,7 @@ export default function AddMoneyRecordPage() {
   const navigate = useNavigate();
   const form = useForm<Form>({
     initialValues: {
-      payType: "2",
+      payType: "3",
       user_id: 0,
       amount: 0,
     },
@@ -77,7 +79,7 @@ export default function AddMoneyRecordPage() {
           });
         });
     } else if (values.payType === "2") {
-      addPairExpenseRecord(
+      addExpenseRecord(
         { amount: values.amount, user_id: values.user_id },
         token,
       )
@@ -92,7 +94,24 @@ export default function AddMoneyRecordPage() {
             color: "red",
           });
         });
-    }
+    }else if (values.payType === "3") {
+    addPairExpenseRecord(
+      { amount: values.amount, user_id: values.user_id },
+      token,
+    )
+      .then(() => {
+        navigate(0);
+      })
+      .catch((err) => {
+        console.log(err);
+        notifications.show({
+          title: "Error!",
+          message: "failed to add money record",
+          color: "red",
+        });
+      });
+  }
+
   }
 
   const balance_row = (
@@ -139,8 +158,8 @@ export default function AddMoneyRecordPage() {
             color="blue"
             data={[
               { label: "収入", value: "1" },
-              { label: "合計支出", value: "2" },
-              // { label: '個人支出', value: "3" },
+              { label: '支出', value: "2" },
+              { label: "合計支出", value: "3" },
             ]}
             {...form.getInputProps("payType")}
           />
