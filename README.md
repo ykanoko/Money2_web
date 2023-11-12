@@ -6,6 +6,8 @@
 
 https://money2-web.vercel.app/register
 
+※[Render](https://render.com/)の無料プランを使用しているため、backend の起動に時間がかかります。
+
 ## Project Structure
 
 - Backend(GO)
