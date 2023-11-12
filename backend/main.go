@@ -30,10 +30,10 @@ const (
 )
 
 func main() {
-	os.Exit(run(context.Background()))
+	os.Exit(run())
 }
 
-func run(ctx context.Context) int {
+func run() int {
 	e := echo.New()
 
 	// Middleware
