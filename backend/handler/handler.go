@@ -268,7 +268,7 @@ func getPairID(c echo.Context) (int64, error) {
 	return claims.PairID, nil
 }
 
-func (h *Handler) sendLineMessage(lineGroupID string, moneyRecord domain.Money, userName string) error {
+func (h *Handler) sendLineMessage(lineGroupID string, moneyRecord domain.Money, typeName string, userName string) error {
 	// linebotに送るメッセージ
 	message := lineMessage{
 		To: lineGroupID,
@@ -277,7 +277,7 @@ func (h *Handler) sendLineMessage(lineGroupID string, moneyRecord domain.Money, 
 				Type: "text",
 				// DO:種類の部分の汎用性を上げる
 				// DO:日付の表記の部分を関数に切り出す？
-				Text: fmt.Sprintf("日付：%s\n種類：収入\n名前：%s\n金額：%d円", moneyRecord.CreatedAt.In(time.FixedZone("JST", 9*60*60)).Format("2006/01/02 15:04:05"), userName, moneyRecord.Amount),
+				Text: fmt.Sprintf("日付：%s\n種類：%s\n名前：%s\n金額：%d円", moneyRecord.CreatedAt.In(time.FixedZone("JST", 9*60*60)).Format("2006/01/02 15:04:05"), typeName, userName, moneyRecord.Amount),
 			},
 		},
 	}
@@ -350,17 +350,29 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		PairID: pairID,
 		TypeID: 1,
 		// DO:typeTableいらない？
+		// domainでtypeテーブルの中身を定義?
+		/*
+		1:収入
+		2:支出
+		3:合計支出
+		*/
 		UserID: req.UserID,
 		Amount: req.Amount,
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	// DO:groupIdを変数にする、環境変数にする
-	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, user.Name); err != nil {
+
+	// DO:domainでtypeテーブルの中身を定義?
+	typeName, err := h.MoneyRepo.GetTypeNameByID(ctx, moneyRecord.TypeID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	// linebotに送信
+	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, typeName, user.Name); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	// DO:ID返す意味ない？
+
 	return c.JSON(http.StatusOK, addIncomeRecordResponse{CreatedAt: moneyRecord.CreatedAt})
 }
 
@@ -416,6 +428,17 @@ func (h *Handler) AddExpenseRecord(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
+	// DO:domainでtypeテーブルの中身を定義?
+	typeName, err := h.MoneyRepo.GetTypeNameByID(ctx, moneyRecord.TypeID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	// linebotに送信
+	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, typeName, user.Name); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	return c.JSON(http.StatusOK, addExpenseRecordResponse{CreatedAt: moneyRecord.CreatedAt})
 }
 
@@ -491,6 +514,21 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
+	// DO:domainでtypeテーブルの中身を定義?
+	typeName, err := h.MoneyRepo.GetTypeNameByID(ctx, moneyRecord.TypeID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	user, err := h.UserRepo.GetUser(ctx, req.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	// linebotに送信
+	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, typeName, user.Name); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	return c.JSON(http.StatusOK, addPairExpenseRecordResponse{CreatedAt: moneyRecord.CreatedAt})
 }
 

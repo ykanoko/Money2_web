@@ -101,7 +101,7 @@ type MoneyRepository interface {
 	AddMoneyRecord(ctx context.Context, money domain.Money) (domain.Money, error)
 	GetLatestMoneyRecordByPairID(ctx context.Context, pair_id int64) (domain.Money, error)
 	GetMoneyRecordsByPairID(ctx context.Context, pair_id int64) ([]domain.Money, error)
-	GetType(ctx context.Context, id int32) (domain.Type, error)
+	GetTypeNameByID(ctx context.Context, id int32) (string, error)
 	GetTypes(ctx context.Context) ([]domain.Type, error)
 }
 type MoneyDBRepository struct {
@@ -151,11 +151,10 @@ func (r *MoneyDBRepository) GetMoneyRecordsByPairID(ctx context.Context, pair_id
 	return money2, nil
 }
 
-func (r *MoneyDBRepository) GetType(ctx context.Context, id int32) (domain.Type, error) {
-	row := r.QueryRowContext(ctx, "SELECT * FROM types WHERE id = ?", id)
-
-	var typ domain.Type
-	return typ, row.Scan(&typ.ID, &typ.Name)
+func (r *MoneyDBRepository) GetTypeNameByID(ctx context.Context, id int32) (string, error) {
+	row := r.QueryRowContext(ctx, "SELECT name FROM types WHERE id = ?", id)
+	var name string
+	return name, row.Scan(&name)
 }
 
 func (r *MoneyDBRepository) GetTypes(ctx context.Context) ([]domain.Type, error) {
