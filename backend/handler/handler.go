@@ -294,10 +294,10 @@ curl -v -X POST https://api.line.me/v2/bot/message/push \
     ]
 }'
 */
-func (h *Handler) sendLineMessage(lineUserID string, moneyRecord domain.Money, userName string) error {
+func (h *Handler) sendLineMessage(lineGroupID string, moneyRecord domain.Money, userName string) error {
 	// linebotに送るメッセージ
 	message := lineMessage{
-		To: lineUserID,
+		To: lineGroupID,
 		Messages: []Message{
 			{
 				Type: "text",
@@ -382,7 +382,8 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	if err := h.sendLineMessage("U51fdd0368cbf4afebd6bbeecacbeddc3", moneyRecord, user.Name); err != nil {
+	// DO:groupIdを変数にする、環境変数にする
+	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, user.Name); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	// DO:ID返す意味ない？
