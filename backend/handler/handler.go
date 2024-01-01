@@ -94,13 +94,14 @@ type Message struct {
 	Text string `json:"text"`
 }
 
+// DO:addはまとめる？
 type addIncomeRecordRequest struct {
 	UserID int64 `json:"user_id" validate:"required"`
 	Amount int64 `json:"amount" validate:"required"`
 }
 
 type addIncomeRecordResponse struct {
-	Money2ID int64 `json:"money2_id"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type addExpenseRecordRequest struct {
@@ -109,7 +110,7 @@ type addExpenseRecordRequest struct {
 }
 
 type addExpenseRecordResponse struct {
-	Money2ID int64 `json:"money2_id"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type addPairExpenseRecordRequest struct {
@@ -118,7 +119,7 @@ type addPairExpenseRecordRequest struct {
 }
 
 type addPairExpenseRecordResponse struct {
-	Money2ID int64 `json:"money2_id"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type Handler struct {
@@ -267,33 +268,6 @@ func getPairID(c echo.Context) (int64, error) {
 	return claims.PairID, nil
 }
 
-// DO:消す
-// 収入が登録された時に、LINEbotから既知のLINEのuserIDに登録された情報の一覧を送信する
-/*送信する内容は、以下の通り
-日付：2000/10　
-種類：収入
-名前：雅也　　
-金額：1000円    
-*/
-/*
-プッシュメッセージのリクエストの例は以下の通り
-curl -v -X POST https://api.line.me/v2/bot/message/push \
--H 'Content-Type: application/json' \
--H 'Authorization: Bearer {channel access token}' \
--d '{
-    "to": "U4af4980629...",
-    "messages":[
-        {
-            "type":"text",
-            "text":"Hello, world1"
-        },
-        {
-            "type":"text",
-            "text":"Hello, world2"
-        }
-    ]
-}'
-*/
 func (h *Handler) sendLineMessage(lineGroupID string, moneyRecord domain.Money, userName string) error {
 	// linebotに送るメッセージ
 	message := lineMessage{
@@ -383,11 +357,12 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	// DO:groupIdを変数にする、環境変数にする
-	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, user.Name); err != nil {
+	// if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, user.Name); err != nil {
+	if err := h.sendLineMessage("Ca52523506465781a55cd4665945d7976", moneyRecord, user.Name); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	// DO:ID返す意味ない？
-	return c.JSON(http.StatusOK, addIncomeRecordResponse{Money2ID: moneyRecord.ID})
+	return c.JSON(http.StatusOK, addIncomeRecordResponse{CreatedAt: moneyRecord.CreatedAt})
 }
 
 func (h *Handler) AddExpenseRecord(c echo.Context) error {
@@ -442,7 +417,7 @@ func (h *Handler) AddExpenseRecord(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	return c.JSON(http.StatusOK, addExpenseRecordResponse{Money2ID: moneyRecord.ID})
+	return c.JSON(http.StatusOK, addExpenseRecordResponse{CreatedAt: moneyRecord.CreatedAt})
 }
 
 func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
@@ -517,7 +492,7 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	return c.JSON(http.StatusOK, addPairExpenseRecordResponse{Money2ID: moneyRecord.ID})
+	return c.JSON(http.StatusOK, addPairExpenseRecordResponse{CreatedAt: moneyRecord.CreatedAt})
 }
 
 func (h *Handler) GetPairStatus(c echo.Context) error {
