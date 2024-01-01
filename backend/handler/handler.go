@@ -357,8 +357,7 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	// DO:groupIdを変数にする、環境変数にする
-	// if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, user.Name); err != nil {
-	if err := h.sendLineMessage("Ca52523506465781a55cd4665945d7976", moneyRecord, user.Name); err != nil {
+	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, user.Name); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	// DO:ID返す意味ない？
