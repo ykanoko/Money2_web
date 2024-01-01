@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -12,9 +14,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/ykanoko/Money2_web/backend/db"
 	"github.com/ykanoko/Money2_web/backend/domain"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -79,6 +82,17 @@ type getMoneyRecordsResponse struct {
 // type getMoneyRecordsResponse struct {
 // 	Records []moneyRecordData `json:"records"`
 // }
+
+// linebotに送るメッセージ
+type lineMessage struct {
+	To       string `json:"to"`
+	Messages []Message `json:"messages"`
+}
+
+type Message struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
 
 type addIncomeRecordRequest struct {
 	UserID int64 `json:"user_id" validate:"required"`
@@ -253,6 +267,68 @@ func getPairID(c echo.Context) (int64, error) {
 	return claims.PairID, nil
 }
 
+// DO:消す
+// 収入が登録された時に、LINEbotから既知のLINEのuserIDに登録された情報の一覧を送信する
+/*送信する内容は、以下の通り
+日付：2000/10　
+種類：収入
+名前：雅也　　
+金額：1000円    
+*/
+/*
+プッシュメッセージのリクエストの例は以下の通り
+curl -v -X POST https://api.line.me/v2/bot/message/push \
+-H 'Content-Type: application/json' \
+-H 'Authorization: Bearer {channel access token}' \
+-d '{
+    "to": "U4af4980629...",
+    "messages":[
+        {
+            "type":"text",
+            "text":"Hello, world1"
+        },
+        {
+            "type":"text",
+            "text":"Hello, world2"
+        }
+    ]
+}'
+*/
+func (h *Handler) sendLineMessage(lineUserID string, moneyRecord domain.Money, userName string) error {
+	// linebotに送るメッセージ
+	message := lineMessage{
+		To: lineUserID,
+		Messages: []Message{
+			{
+				Type: "text",
+				// DO:種類の部分の汎用性を上げる
+				// DO:日付の表記の部分を関数に切り出す？
+				Text: fmt.Sprintf("日付：%s\n種類：収入\n名前：%s\n金額：%d円", moneyRecord.CreatedAt.In(time.FixedZone("JST", 9*60*60)).Format("2006/01/02 15:04:05"), userName, moneyRecord.Amount),
+			},
+		},
+	}
+	messageJson, err := json.Marshal(message)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// linebotに送信
+	req, err := http.NewRequest("POST", "https://api.line.me/v2/bot/message/push", bytes.NewBuffer(messageJson))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("LINE_CHANNEL_ACCESS_TOKEN")))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	defer resp.Body.Close()
+
+	return nil
+}	
+
 func (h *Handler) AddIncomeRecord(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -306,6 +382,10 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+	if err := h.sendLineMessage("U51fdd0368cbf4afebd6bbeecacbeddc3", moneyRecord, user.Name); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	// DO:ID返す意味ない？
 	return c.JSON(http.StatusOK, addIncomeRecordResponse{Money2ID: moneyRecord.ID})
 }
 
