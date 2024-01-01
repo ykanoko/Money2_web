@@ -35,8 +35,8 @@ export default function MoneyRecordPage() {
   );
 
   const rows = moneyRecord?.money_records.map((money_record) => (
-    <tr key={money_record.money2_id}>
-      <td>{money_record.money2_id}</td>
+    <tr key={money_record.date}>
+      {/* <td>{money_record.money2_id}</td> */}
       <td>{money_record.date}</td>
       <td>{money_record.type}</td>
       <td>{money_record.user}</td>
@@ -70,7 +70,7 @@ export default function MoneyRecordPage() {
       <Table striped withBorder>
         <thead>
           <tr>
-            <th>ID</th>
+            {/* <th>ID</th> */}
             <th>日付</th>
             <th>種類</th>
             <th>名前</th>
