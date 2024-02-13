@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -101,6 +102,7 @@ type addIncomeRecordRequest struct {
 }
 
 type addIncomeRecordResponse struct {
+	ID 	  int64     `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -110,6 +112,7 @@ type addExpenseRecordRequest struct {
 }
 
 type addExpenseRecordResponse struct {
+	ID 	  int64     `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -119,6 +122,7 @@ type addPairExpenseRecordRequest struct {
 }
 
 type addPairExpenseRecordResponse struct {
+	ID 	  int64     `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -268,16 +272,15 @@ func getPairID(c echo.Context) (int64, error) {
 	return claims.PairID, nil
 }
 
-func (h *Handler) sendLineMessage(lineGroupID string, moneyRecord domain.Money, typeName string, userName string) error {
+func (h *Handler) sendLineMessage(lineGroupID string, textMessage string, moneyRecord domain.Money, typeName string, userName string) error {
 	// linebotに送るメッセージ
 	message := lineMessage{
 		To: lineGroupID,
 		Messages: []Message{
 			{
 				Type: "text",
-				// DO:種類の部分の汎用性を上げる
 				// DO:日付の表記の部分を関数に切り出す？
-				Text: fmt.Sprintf("日付：%s\n種類：%s\n名前：%s\n金額：%d円", moneyRecord.CreatedAt.In(time.FixedZone("JST", 9*60*60)).Format("2006/01/02 15:04:05"), typeName, userName, moneyRecord.Amount),
+				Text: fmt.Sprintf("%s\n%s\n%s\n%s\n%d円", textMessage, moneyRecord.CreatedAt.In(time.FixedZone("JST", 9*60*60)).Format("2006/01/02 15:04:05"), typeName, userName, moneyRecord.Amount),
 			},
 		},
 	}
@@ -303,6 +306,8 @@ func (h *Handler) sendLineMessage(lineGroupID string, moneyRecord domain.Money, 
 	return nil
 }	
 
+// "登録"を定数とする
+const addRecordMessage = "登録"
 func (h *Handler) AddIncomeRecord(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -345,6 +350,7 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	// DO:transactionにする？, ctxを渡す？
 	//money2 tableに登録
 	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
 		PairID: pairID,
@@ -364,16 +370,17 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 	}
 
 	// DO:domainでtypeテーブルの中身を定義?
+	// linebotに送信
 	typeName, err := h.MoneyRepo.GetTypeNameByID(ctx, moneyRecord.TypeID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	// linebotに送信
-	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, typeName, user.Name); err != nil {
+
+	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), addRecordMessage, moneyRecord, typeName, user.Name); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, addIncomeRecordResponse{CreatedAt: moneyRecord.CreatedAt})
+	return c.JSON(http.StatusOK, addIncomeRecordResponse{ID: moneyRecord.ID, CreatedAt: moneyRecord.CreatedAt})
 }
 
 func (h *Handler) AddExpenseRecord(c echo.Context) error {
@@ -435,11 +442,11 @@ func (h *Handler) AddExpenseRecord(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	// linebotに送信
-	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, typeName, user.Name); err != nil {
+	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), addRecordMessage, moneyRecord, typeName, user.Name); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, addExpenseRecordResponse{CreatedAt: moneyRecord.CreatedAt})
+	return c.JSON(http.StatusOK, addExpenseRecordResponse{ID: moneyRecord.ID, CreatedAt: moneyRecord.CreatedAt})
 }
 
 func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
@@ -525,11 +532,69 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	// linebotに送信
-	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), moneyRecord, typeName, user.Name); err != nil {
+	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), addRecordMessage, moneyRecord, typeName, user.Name); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, addPairExpenseRecordResponse{CreatedAt: moneyRecord.CreatedAt})
+	return c.JSON(http.StatusOK, addPairExpenseRecordResponse{ID: moneyRecord.ID, CreatedAt: moneyRecord.CreatedAt})
+}
+
+// "キャンセル"を定数とする
+const cancelMessage = "キャンセル"
+func (h *Handler) CancelIncomeRecord(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	recordID, err := strconv.ParseInt(c.Param("record_id"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	pairID, err := getPairID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	moneyRecord, err := h.MoneyRepo.GetMoneyRecordByID(ctx, recordID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "Record not found.")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if moneyRecord.PairID != pairID {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "You don't belong to this pair.")
+	}
+
+	user, err := h.UserRepo.GetUser(ctx, moneyRecord.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	
+	typeName, err := h.MoneyRepo.GetTypeNameByID(ctx, moneyRecord.TypeID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	// DO:transactionを開始
+	// tx, err := h.DB.BeginTx(ctx, nil)
+
+	// 残金の変更
+	if err := h.UserRepo.UpdateBalance(ctx, moneyRecord.UserID, user.Balance-float64(moneyRecord.Amount)); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	
+	// recordを削除
+	if err := h.MoneyRepo.DeleteMoneyRecordByID(ctx, recordID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// linebotに送信
+	if err := h.sendLineMessage(os.Getenv("LINE_GROUP_ID"), cancelMessage, moneyRecord, typeName, user.Name); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, nil)
 }
 
 func (h *Handler) GetPairStatus(c echo.Context) error {

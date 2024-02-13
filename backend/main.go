@@ -101,9 +101,12 @@ func run() int {
 	l := e.Group("")
 	l.Use(echojwt.WithConfig(config))
 
+	// DO:groupでまとめる
 	l.POST("/record_income", h.AddIncomeRecord)
 	l.POST("/record_expense", h.AddExpenseRecord)
 	l.POST("/record_pair_expense", h.AddPairExpenseRecord)
+	l.DELETE("/record_income/:record_id", h.CancelIncomeRecord)
+
 	l.GET("/pair_status", h.GetPairStatus)
 	l.GET("/money_records", h.GetMoneyRecords)
 

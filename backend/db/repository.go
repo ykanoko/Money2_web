@@ -99,6 +99,8 @@ func (r *UserDBRepository) UpdateCalculationUser1(ctx context.Context, id int64,
 
 type MoneyRepository interface {
 	AddMoneyRecord(ctx context.Context, money domain.Money) (domain.Money, error)
+	DeleteMoneyRecordByID(ctx context.Context, id int64) error
+	GetMoneyRecordByID(ctx context.Context, id int64) (domain.Money, error)
 	GetLatestMoneyRecordByPairID(ctx context.Context, pair_id int64) (domain.Money, error)
 	GetMoneyRecordsByPairID(ctx context.Context, pair_id int64) ([]domain.Money, error)
 	GetTypeNameByID(ctx context.Context, id int32) (string, error)
@@ -122,6 +124,19 @@ func (r *MoneyDBRepository) AddMoneyRecord(ctx context.Context, money domain.Mon
 
 	var res domain.Money
 	return res, row.Scan(&res.ID, &res.PairID, &res.TypeID, &res.UserID, &res.Amount, &res.CreatedAt)
+}
+
+func (r *MoneyDBRepository) DeleteMoneyRecordByID(ctx context.Context, id int64) error {
+	if _, err := r.ExecContext(ctx, "DELETE FROM money2 WHERE id = ?", id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *MoneyDBRepository) GetMoneyRecordByID(ctx context.Context, id int64) (domain.Money, error) {
+	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE id = ?", id)
+	var money domain.Money
+	return money, row.Scan(&money.ID, &money.PairID, &money.TypeID, &money.UserID, &money.Amount, &money.CreatedAt)
 }
 
 func (r *MoneyDBRepository) GetLatestMoneyRecordByPairID(ctx context.Context, pair_id int64) (domain.Money, error) {
