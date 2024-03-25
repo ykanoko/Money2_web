@@ -73,7 +73,7 @@ func run() int {
 	}
 
 	// db
-	sqlDB, err := sql.Open("mysql", os.Getenv("DSN"))
+	sqlDB, err := sql.Open("postgres", os.Getenv("CONN_STR"))
 	if err != nil {
 		log.Fatalf("failed to connect: %v", err)
 	}
