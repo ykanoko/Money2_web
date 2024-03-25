@@ -11,12 +11,12 @@ import (
 	"os/signal"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	_ "github.com/lib/pq"
 	"github.com/ykanoko/Money2_web/backend/db"
 	"github.com/ykanoko/Money2_web/backend/handler"
 )
