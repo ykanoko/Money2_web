@@ -79,11 +79,11 @@ func run() int {
 	}
 	defer sqlDB.Close()
 
-	if err := sqlDB.Ping(); err != nil {
-		log.Fatalf("failed to ping: %v", err)
-	}
-
-	log.Println("Successfully connected to PlanetScale!")
+    var version string
+    if err := sqlDB.QueryRow("select version()").Scan(&version); err != nil {
+        panic(err)
+    }
+    fmt.Printf("version=%s\n", version)
 
 	h := handler.Handler{
 		DB:        sqlDB,
