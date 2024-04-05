@@ -26,7 +26,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO users (name, balance) VALUES (?, 0)", user.Name); err != nil {
+	if _, err := r.ExecContext(ctx, "INSERT INTO users (name, balance) VALUES ($1, 0)", user.Name); err != nil {
 		return 0, err
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
@@ -38,7 +38,7 @@ func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64
 }
 
 func (r *UserDBRepository) AddPair(ctx context.Context, pair domain.Pair) (int64, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO pairs (password, user1_id, user2_id, calculation_user1) VALUES (?, ?, ?, 0)", pair.Password, pair.User1ID, pair.User2ID); err != nil {
+	if _, err := r.ExecContext(ctx, "INSERT INTO pairs (password, user1_id, user2_id, calculation_user1) VALUES ($1, $2, $3, 0)", pair.Password, pair.User1ID, pair.User2ID); err != nil {
 		return 0, err
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
@@ -50,14 +50,14 @@ func (r *UserDBRepository) AddPair(ctx context.Context, pair domain.Pair) (int64
 }
 
 func (r *UserDBRepository) GetUser(ctx context.Context, id int64) (domain.User, error) {
-	row := r.QueryRowContext(ctx, "SELECT * FROM users WHERE id = ?", id)
+	row := r.QueryRowContext(ctx, "SELECT * FROM users WHERE id = $1", id)
 
 	var user domain.User
 	return user, row.Scan(&user.ID, &user.Name, &user.Balance)
 }
 
 func (r *UserDBRepository) GetPair(ctx context.Context, id int64) (domain.Pair, error) {
-	row := r.QueryRowContext(ctx, "SELECT * FROM pairs WHERE id = ?", id)
+	row := r.QueryRowContext(ctx, "SELECT * FROM pairs WHERE id = $1", id)
 
 	var pair domain.Pair
 	return pair, row.Scan(&pair.ID, &pair.Password, &pair.User1ID, &pair.User2ID, &pair.CalculationUser1, &pair.CreatedAt)
@@ -85,13 +85,13 @@ func (r *UserDBRepository) GetUsers(ctx context.Context) ([]domain.User, error) 
 }
 
 func (r *UserDBRepository) UpdateBalance(ctx context.Context, id int64, balance float64) error {
-	if _, err := r.ExecContext(ctx, "UPDATE users SET balance = ? WHERE id = ?", balance, id); err != nil {
+	if _, err := r.ExecContext(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, id); err != nil {
 		return err
 	}
 	return nil
 }
 func (r *UserDBRepository) UpdateCalculationUser1(ctx context.Context, id int64, calculation_user1 float64) error {
-	if _, err := r.ExecContext(ctx, "UPDATE pairs SET calculation_user1 = ? WHERE id = ?", calculation_user1, id); err != nil {
+	if _, err := r.ExecContext(ctx, "UPDATE pairs SET calculation_user1 = $1 WHERE id = $2", calculation_user1, id); err != nil {
 		return err
 	}
 	return nil
@@ -115,7 +115,7 @@ func NewMoneyRepository(db *sql.DB) MoneyRepository {
 }
 
 func (r *MoneyDBRepository) AddMoneyRecord(ctx context.Context, money domain.Money) (domain.Money, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO money2 (pair_id, type_id, user_id, amount) VALUES (?, ?, ?, ?)", money.PairID, money.TypeID, money.UserID, money.Amount); err != nil {
+	if _, err := r.ExecContext(ctx, "INSERT INTO money2 (pair_id, type_id, user_id, amount) VALUES ($1, $2, $3, $4)", money.PairID, money.TypeID, money.UserID, money.Amount); err != nil {
 		return domain.Money{}, err
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
@@ -127,26 +127,26 @@ func (r *MoneyDBRepository) AddMoneyRecord(ctx context.Context, money domain.Mon
 }
 
 func (r *MoneyDBRepository) DeleteMoneyRecordByID(ctx context.Context, id int64) error {
-	if _, err := r.ExecContext(ctx, "DELETE FROM money2 WHERE id = ?", id); err != nil {
+	if _, err := r.ExecContext(ctx, "DELETE FROM money2 WHERE id = $1", id); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *MoneyDBRepository) GetMoneyRecordByID(ctx context.Context, id int64) (domain.Money, error) {
-	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE id = ?", id)
+	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE id = $1", id)
 	var money domain.Money
 	return money, row.Scan(&money.ID, &money.PairID, &money.TypeID, &money.UserID, &money.Amount, &money.CreatedAt)
 }
 
 func (r *MoneyDBRepository) GetLatestMoneyRecordByPairID(ctx context.Context, pair_id int64) (domain.Money, error) {
-	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE pair_id = ? ORDER BY created_at DESC LIMIT 1", pair_id)
+	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE pair_id = $1 ORDER BY created_at DESC LIMIT 1", pair_id)
 	var money domain.Money
 	return money, row.Scan(&money.ID, &money.PairID, &money.TypeID, &money.UserID, &money.Amount, &money.CreatedAt)
 }
 
 func (r *MoneyDBRepository) GetMoneyRecordsByPairID(ctx context.Context, pair_id int64) ([]domain.Money, error) {
-	rows, err := r.QueryContext(ctx, "SELECT * FROM money2 WHERE pair_id = ? ORDER BY created_at DESC LIMIT 100", pair_id)
+	rows, err := r.QueryContext(ctx, "SELECT * FROM money2 WHERE pair_id = $1 ORDER BY created_at DESC LIMIT 100", pair_id)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (r *MoneyDBRepository) GetMoneyRecordsByPairID(ctx context.Context, pair_id
 }
 
 func (r *MoneyDBRepository) GetTypeNameByID(ctx context.Context, id int32) (string, error) {
-	row := r.QueryRowContext(ctx, "SELECT name FROM types WHERE id = ?", id)
+	row := r.QueryRowContext(ctx, "SELECT name FROM types WHERE id = $1", id)
 	var name string
 	return name, row.Scan(&name)
 }
