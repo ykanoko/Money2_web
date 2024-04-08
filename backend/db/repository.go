@@ -13,8 +13,8 @@ type UserRepository interface {
 	GetUser(ctx context.Context, id int64) (domain.User, error)
 	GetPair(ctx context.Context, id int64) (domain.Pair, error)
 	GetUsers(ctx context.Context) ([]domain.User, error)
-	UpdateBalance(ctx context.Context, id int64, balance float64) error
-	UpdateCalculationUser1(ctx context.Context, id int64, calculation_user1 float64) error
+	UpdateBalance(tx *sql.Tx, id int64, balance float64) error
+	UpdateCalculationUser1(tx *sql.Tx, id int64, calculation_user1 float64) error
 }
 
 type UserDBRepository struct {
@@ -84,22 +84,22 @@ func (r *UserDBRepository) GetUsers(ctx context.Context) ([]domain.User, error) 
 	return users, nil
 }
 
-func (r *UserDBRepository) UpdateBalance(ctx context.Context, id int64, balance float64) error {
-	if _, err := r.ExecContext(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, id); err != nil {
+func (r *UserDBRepository) UpdateBalance(tx *sql.Tx, id int64, balance float64) error {
+	if _, err := tx.Exec("UPDATE users SET balance = $1 WHERE id = $2", balance, id); err != nil {
 		return err
 	}
 	return nil
 }
-func (r *UserDBRepository) UpdateCalculationUser1(ctx context.Context, id int64, calculation_user1 float64) error {
-	if _, err := r.ExecContext(ctx, "UPDATE pairs SET calculation_user1 = $1 WHERE id = $2", calculation_user1, id); err != nil {
+func (r *UserDBRepository) UpdateCalculationUser1(tx *sql.Tx, id int64, calculation_user1 float64) error {
+	if _, err := tx.Exec("UPDATE pairs SET calculation_user1 = $1 WHERE id = $2", calculation_user1, id); err != nil {
 		return err
 	}
 	return nil
 }
 
 type MoneyRepository interface {
-	AddMoneyRecord(ctx context.Context, money domain.Money) (domain.Money, error)
-	DeleteMoneyRecordByID(ctx context.Context, id int64) error
+	AddMoneyRecord(tx *sql.Tx, money domain.Money) (domain.Money, error)
+	DeleteMoneyRecordByID(tx *sql.Tx, id int64) error
 	GetMoneyRecordByID(ctx context.Context, id int64) (domain.Money, error)
 	GetLatestMoneyRecordByPairID(ctx context.Context, pair_id int64) (domain.Money, error)
 	GetMoneyRecordsByPairID(ctx context.Context, pair_id int64) ([]domain.Money, error)
@@ -114,20 +114,20 @@ func NewMoneyRepository(db *sql.DB) MoneyRepository {
 	return &MoneyDBRepository{DB: db}
 }
 
-func (r *MoneyDBRepository) AddMoneyRecord(ctx context.Context, money domain.Money) (domain.Money, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO money2 (pair_id, type_id, user_id, amount) VALUES ($1, $2, $3, $4)", money.PairID, money.TypeID, money.UserID, money.Amount); err != nil {
+func (r *MoneyDBRepository) AddMoneyRecord(tx *sql.Tx, money domain.Money) (domain.Money, error) {
+	if _, err := tx.Exec("INSERT INTO money2 (pair_id, type_id, user_id, amount) VALUES ($1, $2, $3, $4)", money.PairID, money.TypeID, money.UserID, money.Amount); err != nil {
 		return domain.Money{}, err
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT * FROM money2 WHERE id = LAST_INSERT_ID()")
+	row := tx.QueryRow("SELECT * FROM money2 WHERE id = LAST_INSERT_ID()")
 
 	var res domain.Money
 	return res, row.Scan(&res.ID, &res.PairID, &res.TypeID, &res.UserID, &res.Amount, &res.CreatedAt)
 }
 
-func (r *MoneyDBRepository) DeleteMoneyRecordByID(ctx context.Context, id int64) error {
-	if _, err := r.ExecContext(ctx, "DELETE FROM money2 WHERE id = $1", id); err != nil {
+func (r *MoneyDBRepository) DeleteMoneyRecordByID(tx *sql.Tx, id int64) error {
+	if _, err := tx.Exec("DELETE FROM money2 WHERE id = $1", id); err != nil {
 		return err
 	}
 	return nil

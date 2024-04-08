@@ -340,19 +340,24 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusPreconditionFailed, "You don't belong to this pair.")
 	}
 
-	// 残金の変更
 	user, err := h.UserRepo.GetUser(ctx, req.UserID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-
-	if err := h.UserRepo.UpdateBalance(ctx, req.UserID, user.Balance+float64(req.Amount)); err != nil {
+	
+	tx, err := h.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	
+	// 残金の変更
+	if err := h.UserRepo.UpdateBalance(tx, req.UserID, user.Balance+float64(req.Amount)); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// DO:transactionにする？, ctxを渡す？
 	//money2 tableに登録
-	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
+	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(tx, domain.Money{
 		PairID: pairID,
 		TypeID: 1,
 		// DO:typeTableいらない？
@@ -366,6 +371,12 @@ func (h *Handler) AddIncomeRecord(c echo.Context) error {
 		Amount: req.Amount,
 	})
 	if err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -415,24 +426,36 @@ func (h *Handler) AddExpenseRecord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusPreconditionFailed, "You don't belong to this pair.")
 	}
 
-	// 残金の変更
 	user, err := h.UserRepo.GetUser(ctx, req.UserID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+	
+	tx, err := h.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-	if err := h.UserRepo.UpdateBalance(ctx, req.UserID, user.Balance-float64(req.Amount)); err != nil {
+	// 残金の変更
+	if err := h.UserRepo.UpdateBalance(tx, req.UserID, user.Balance-float64(req.Amount)); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	//money2 tableに登録
-	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
+	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(tx, domain.Money{
 		PairID: pairID,
 		TypeID: 2,
 		UserID: req.UserID,
 		Amount: req.Amount,
 	})
 	if err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -495,11 +518,18 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	// 残金の変更
-	if err := h.UserRepo.UpdateBalance(ctx, user1.ID, user1.Balance-float64(req.Amount)/2); err != nil {
+	tx, err := h.DB.BeginTx(ctx, nil)
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	if err := h.UserRepo.UpdateBalance(ctx, user2.ID, user2.Balance-float64(req.Amount)/2); err != nil {
+
+	// 残金の変更
+	if err := h.UserRepo.UpdateBalance(tx, user1.ID, user1.Balance-float64(req.Amount)/2); err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	if err := h.UserRepo.UpdateBalance(tx, user2.ID, user2.Balance-float64(req.Amount)/2); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	// 精算の金額を変更
@@ -507,18 +537,24 @@ func (h *Handler) AddPairExpenseRecord(c echo.Context) error {
 	if req.UserID == user2.ID {
 		calculationAmount = -calculationAmount
 	}
-	if err := h.UserRepo.UpdateCalculationUser1(ctx, pairID, pair.CalculationUser1+calculationAmount); err != nil {
+	if err := h.UserRepo.UpdateCalculationUser1(tx, pairID, pair.CalculationUser1+calculationAmount); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	//money2 tableに登録
-	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(c.Request().Context(), domain.Money{
+	moneyRecord, err := h.MoneyRepo.AddMoneyRecord(tx, domain.Money{
 		PairID: pairID,
 		TypeID: 3,
 		UserID: req.UserID,
 		Amount: req.Amount,
 	})
 	if err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -576,16 +612,24 @@ func (h *Handler) CancelIncomeRecord(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	// DO:transactionを開始
-	// tx, err := h.DB.BeginTx(ctx, nil)
-
-	// 残金の変更
-	if err := h.UserRepo.UpdateBalance(ctx, moneyRecord.UserID, user.Balance-float64(moneyRecord.Amount)); err != nil {
+	tx, err := h.DB.BeginTx(ctx, nil)
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	
+
+	// 残金の変更
+	if err := h.UserRepo.UpdateBalance(tx, moneyRecord.UserID, user.Balance-float64(moneyRecord.Amount)); err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	// recordを削除
-	if err := h.MoneyRepo.DeleteMoneyRecordByID(ctx, recordID); err != nil {
+	if err := h.MoneyRepo.DeleteMoneyRecordByID(tx, recordID); err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
