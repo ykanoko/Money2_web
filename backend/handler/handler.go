@@ -181,16 +181,21 @@ func (h *Handler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	user1ID, err := h.UserRepo.AddUser(c.Request().Context(), domain.User{Name: req.User1Name})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-	user2ID, err := h.UserRepo.AddUser(c.Request().Context(), domain.User{Name: req.User2Name})
+	tx, err := h.DB.BeginTx(c.Request().Context(), nil)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	pairID, err := h.UserRepo.AddPair(c.Request().Context(), domain.Pair{Password: string(hash), User1ID: user1ID, User2ID: user2ID})
+	user1ID, err := h.UserRepo.AddUser(tx, domain.User{Name: req.User1Name})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	user2ID, err := h.UserRepo.AddUser(tx, domain.User{Name: req.User2Name})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	pairID, err := h.UserRepo.AddPair(tx, domain.Pair{Password: string(hash), User1ID: user1ID, User2ID: user2ID})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}

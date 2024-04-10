@@ -8,8 +8,8 @@ import (
 )
 
 type UserRepository interface {
-	AddUser(ctx context.Context, user domain.User) (int64, error)
-	AddPair(ctx context.Context, pair domain.Pair) (int64, error)
+	AddUser(tx *sql.Tx, user domain.User) (int64, error)
+	AddPair(tx *sql.Tx, pair domain.Pair) (int64, error)
 	GetUser(ctx context.Context, id int64) (domain.User, error)
 	GetPair(ctx context.Context, id int64) (domain.Pair, error)
 	GetUsers(ctx context.Context) ([]domain.User, error)
@@ -25,26 +25,19 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &UserDBRepository{DB: db}
 }
 
-func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO users (name, balance) VALUES ($1, 0)", user.Name); err != nil {
-		return 0, err
-	}
+func (r *UserDBRepository) AddUser(tx *sql.Tx, user domain.User) (int64, error) {
+	row := tx.QueryRow("INSERT INTO users (name, balance) VALUES ($1, 0) RETURNING id", user.Name)
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE id = LAST_INSERT_ID()")
-
 	var id int64
 	return id, row.Scan(&id)
 }
 
-func (r *UserDBRepository) AddPair(ctx context.Context, pair domain.Pair) (int64, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO pairs (password, user1_id, user2_id, calculation_user1) VALUES ($1, $2, $3, 0)", pair.Password, pair.User1ID, pair.User2ID); err != nil {
-		return 0, err
-	}
+func (r *UserDBRepository) AddPair(tx *sql.Tx, pair domain.Pair) (int64, error) {
+	row := tx.QueryRow("INSERT INTO pairs (password, user1_id, user2_id, calculation_user1) VALUES ($1, $2, $3, 0) RETURNING id", pair.Password, pair.User1ID, pair.User2ID)
+
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE id = LAST_INSERT_ID()")
-
 	var id int64
 	return id, row.Scan(&id)
 }
@@ -115,14 +108,10 @@ func NewMoneyRepository(db *sql.DB) MoneyRepository {
 }
 
 func (r *MoneyDBRepository) AddMoneyRecord(tx *sql.Tx, money domain.Money) (domain.Money, error) {
-	if _, err := tx.Exec("INSERT INTO money2 (pair_id, type_id, user_id, amount) VALUES ($1, $2, $3, $4)", money.PairID, money.TypeID, money.UserID, money.Amount); err != nil {
-		return domain.Money{}, err
-	}
+	row := tx.QueryRow("INSERT INTO money2 (pair_id, type_id, user_id, amount) VALUES ($1, $2, $3, $4) RETURNING id, pair_id, type_id, user_id, amount, created_at", money.PairID, money.TypeID, money.UserID, money.Amount)
+	var res domain.Money
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := tx.QueryRow("SELECT * FROM money2 WHERE id = LAST_INSERT_ID()")
-
-	var res domain.Money
 	return res, row.Scan(&res.ID, &res.PairID, &res.TypeID, &res.UserID, &res.Amount, &res.CreatedAt)
 }
 
